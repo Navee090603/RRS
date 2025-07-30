@@ -1,52 +1,52 @@
--- USERS TABLE
-CREATE TABLE Users (
-    UserId INT PRIMARY KEY IDENTITY(1,1),
-    Name NVARCHAR(50) NOT NULL,
-    Username NVARCHAR(30) NOT NULL UNIQUE,
-    MobileNumber NVARCHAR(15) NOT NULL UNIQUE,
-    Gender CHAR(1) NOT NULL CHECK (Gender IN ('M', 'F', 'O')),
-    DOB DATE NOT NULL,
-    PasswordHash NVARCHAR(256) NOT NULL
-);
+-- users table
+create table users (
+    userid int primary key identity(1,1),
+    name nvarchar(50) not null,
+    username nvarchar(30) not null unique,
+    mobilenumber nvarchar(15) not null unique,
+    gender char(1) not null check (gender in ('m', 'f', 'o')),
+    dob date not null,
+    passwordhash nvarchar(256) not null
+)
 
--- TRAIN TABLE
-CREATE TABLE Train (
-    TrainId INT PRIMARY KEY IDENTITY(1,1),
-    TrainNumber NVARCHAR(10) NOT NULL UNIQUE,
-    TrainName NVARCHAR(100) NOT NULL,
-    Source NVARCHAR(50) NOT NULL,
-    Destination NVARCHAR(50) NOT NULL,
-    DepartureTime TIME NOT NULL,
-    ArrivalTime TIME NOT NULL,
-    Duration AS (DATEDIFF(MINUTE, DepartureTime, ArrivalTime)) PERSISTED
-);
+-- train table
+create table train (
+    trainid int primary key identity(1,1),
+    trainnumber nvarchar(10) not null unique,
+    trainname nvarchar(100) not null,
+    source nvarchar(50) not null,
+    destination nvarchar(50) not null,
+    departuretime time not null,
+    arrivaltime time not null,
+    duration as (datediff(minute, departuretime, arrivaltime)) persisted
+)
 
--- CLASS TABLE
-CREATE TABLE Class (
-    ClassId INT PRIMARY KEY IDENTITY(1,1),
-    ClassName NVARCHAR(50) NOT NULL
-);
+-- class table
+create table class (
+    classid int primary key identity(1,1),
+    classname nvarchar(50) not null
+)
 
--- TRAINCLASS TABLE
-CREATE TABLE TrainClass (
-    TrainClassId INT PRIMARY KEY IDENTITY(1,1),
-    TrainId INT NOT NULL FOREIGN KEY REFERENCES Train(TrainId),
-    ClassId INT NOT NULL FOREIGN KEY REFERENCES Class(ClassId),
-    TotalSeats INT NOT NULL,
-    Fare DECIMAL(10,2) NOT NULL
-);
+-- trainclass table
+create table trainclass (
+    trainclassid int primary key identity(1,1),
+    trainid int not null foreign key references train(trainid),
+    classid int not null foreign key references class(classid),
+    totalseats int not null,
+    fare decimal(10,2) not null
+)
 
--- BOOKING TABLE
-CREATE TABLE Booking (
-    BookingId INT PRIMARY KEY IDENTITY(1,1),
-    UserId INT NOT NULL FOREIGN KEY REFERENCES Users(UserId),
-    TrainClassId INT NOT NULL FOREIGN KEY REFERENCES TrainClass(TrainClassId),
-    TravelDate DATE NOT NULL,
-    BookingDate DATETIME NOT NULL DEFAULT GETDATE(),
-    PassengerName NVARCHAR(50) NOT NULL,
-    Age INT NOT NULL,
-    Gender CHAR(1) NOT NULL CHECK (Gender IN ('M', 'F', 'O')),
-    Status NVARCHAR(20) NOT NULL,
-    PaymentStatus NVARCHAR(20) NOT NULL,
-    SeatNumber NVARCHAR(10)
-);
+-- booking table
+create table booking (
+    bookingid int primary key identity(1,1),
+    userid int not null foreign key references users(userid),
+    trainclassid int not null foreign key references trainclass(trainclassid),
+    traveldate date not null,
+    bookingdate datetime not null default getdate(),
+    passengername nvarchar(50) not null,
+    age int not null,
+    gender char(1) not null check (gender in ('m', 'f', 'o')),
+    status nvarchar(20) not null,
+    paymentstatus nvarchar(20) not null,
+    seatnumber nvarchar(10)
+)

@@ -1,0 +1,52 @@
+-- USERS TABLE
+CREATE TABLE Users (
+    UserId INT PRIMARY KEY IDENTITY(1,1),
+    Name NVARCHAR(50) NOT NULL,
+    Username NVARCHAR(30) NOT NULL UNIQUE,
+    MobileNumber NVARCHAR(15) NOT NULL UNIQUE,
+    Gender CHAR(1) NOT NULL CHECK (Gender IN ('M', 'F', 'O')),
+    DOB DATE NOT NULL,
+    PasswordHash NVARCHAR(256) NOT NULL
+);
+
+-- TRAIN TABLE
+CREATE TABLE Train (
+    TrainId INT PRIMARY KEY IDENTITY(1,1),
+    TrainNumber NVARCHAR(10) NOT NULL UNIQUE,
+    TrainName NVARCHAR(100) NOT NULL,
+    Source NVARCHAR(50) NOT NULL,
+    Destination NVARCHAR(50) NOT NULL,
+    DepartureTime TIME NOT NULL,
+    ArrivalTime TIME NOT NULL,
+    Duration AS (DATEDIFF(MINUTE, DepartureTime, ArrivalTime)) PERSISTED
+);
+
+-- CLASS TABLE
+CREATE TABLE Class (
+    ClassId INT PRIMARY KEY IDENTITY(1,1),
+    ClassName NVARCHAR(50) NOT NULL
+);
+
+-- TRAINCLASS TABLE
+CREATE TABLE TrainClass (
+    TrainClassId INT PRIMARY KEY IDENTITY(1,1),
+    TrainId INT NOT NULL FOREIGN KEY REFERENCES Train(TrainId),
+    ClassId INT NOT NULL FOREIGN KEY REFERENCES Class(ClassId),
+    TotalSeats INT NOT NULL,
+    Fare DECIMAL(10,2) NOT NULL
+);
+
+-- BOOKING TABLE
+CREATE TABLE Booking (
+    BookingId INT PRIMARY KEY IDENTITY(1,1),
+    UserId INT NOT NULL FOREIGN KEY REFERENCES Users(UserId),
+    TrainClassId INT NOT NULL FOREIGN KEY REFERENCES TrainClass(TrainClassId),
+    TravelDate DATE NOT NULL,
+    BookingDate DATETIME NOT NULL DEFAULT GETDATE(),
+    PassengerName NVARCHAR(50) NOT NULL,
+    Age INT NOT NULL,
+    Gender CHAR(1) NOT NULL CHECK (Gender IN ('M', 'F', 'O')),
+    Status NVARCHAR(20) NOT NULL,
+    PaymentStatus NVARCHAR(20) NOT NULL,
+    SeatNumber NVARCHAR(10)
+);

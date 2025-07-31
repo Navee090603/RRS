@@ -128,6 +128,14 @@ Here are the suggested database tables with their respective fields for the rail
 - `status_id` (PK)
 - `status_name` (e.g., "Confirmed", "Waiting", "Cancelled")
 
+### **14. Cancellation_Table**
+cancellation_id (PK)
+ticket_id (FK → Tickets.ticket_id)
+cancelled_by (FK → Passengers.passenger_id)
+cancellation_reason
+cancellation_time (timestamp)
+refund_generated (boolean)
+
 ---
 
 ### **Relationships Summary**

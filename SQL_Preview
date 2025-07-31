@@ -1,246 +1,140 @@
--- users table
-create table users (
-    userid int primary key identity(1,1),
-    name nvarchar(50) not null,
-    username nvarchar(30) not null unique,
-    mobilenumber nvarchar(15) not null unique,
-    gender char(1) not null check (gender in ('m', 'f', 'o')),
-    dob date not null,
-    passwordhash nvarchar(256) not null
-)
-
--- train table
-create table train (
-    trainid int primary key identity(1,1),
-    trainnumber nvarchar(10) not null unique,
-    trainname nvarchar(100) not null,
-    source nvarchar(50) not null,
-    destination nvarchar(50) not null,
-    departuretime time not null,
-    arrivaltime time not null,
-    duration as (datediff(minute, departuretime, arrivaltime)) persisted
-)
-
--- class table
-create table class (
-    classid int primary key identity(1,1),
-    classname nvarchar(50) not null
-)
-
--- trainclass table
-create table trainclass (
-    trainclassid int primary key identity(1,1),
-    trainid int not null foreign key references train(trainid),
-    classid int not null foreign key references class(classid),
-    totalseats int not null,
-    fare decimal(10,2) not null
-)
-
--- booking table
-create table booking (
-    bookingid int primary key identity(1,1),
-    userid int not null foreign key references users(userid),
-    trainclassid int not null foreign key references trainclass(trainclassid),
-    traveldate date not null,
-    bookingdate datetime not null default getdate(),
-    passengername nvarchar(50) not null,
-    age int not null,
-    gender char(1) not null check (gender in ('m', 'f', 'o')),
-    status nvarchar(20) not null,
-    paymentstatus nvarchar(20) not null,
-    seatnumber nvarchar(10)
-)
-
-
-
-
-
-
-
-
-
-
-
-
-Here’s the **complete set of 13 tables** for your railway reservation database, optimized for real-world use with all constraints and auto-generation logic:
+Here are the suggested database tables with their respective fields for the railway reservation system based on the provided image:
 
 ---
 
-### **Core Tables (8)**
-1. **`Stations`**  
-   ```sql
-   CREATE TABLE Stations (
-       station_id INT AUTO_INCREMENT PRIMARY KEY,
-       station_name VARCHAR(100) NOT NULL,
-       station_code VARCHAR(5) UNIQUE NOT NULL,  -- e.g., "DEL"
-       city VARCHAR(50) NOT NULL,
-       state VARCHAR(50) NOT NULL
-   );
-   ```
-
-2. **`Trains`**  
-   ```sql
-   CREATE TABLE Trains (
-       train_id INT AUTO_INCREMENT PRIMARY KEY,
-       train_number VARCHAR(10) UNIQUE NOT NULL,  -- e.g., "12952"
-       train_name VARCHAR(100) NOT NULL,
-       source_station_id INT NOT NULL,
-       destination_station_id INT NOT NULL,
-       FOREIGN KEY (source_station_id) REFERENCES Stations(station_id),
-       FOREIGN KEY (destination_station_id) REFERENCES Stations(station_id),
-       CHECK (source_station_id != destination_station_id)
-   );
-   ```
-
-3. **`Train_Classes`**  
-   ```sql
-   CREATE TABLE Train_Classes (
-       class_id INT AUTO_INCREMENT PRIMARY KEY,
-       class_name VARCHAR(30) UNIQUE NOT NULL,  -- e.g., "AC 3-Tier"
-       base_fare_multiplier DECIMAL(3,2) NOT NULL
-   );
-   ```
-
-4. **`Passengers`**  
-   ```sql
-   CREATE TABLE Passengers (
-       passenger_id INT AUTO_INCREMENT PRIMARY KEY,
-       first_name VARCHAR(50) NOT NULL,
-       last_name VARCHAR(50) NOT NULL,
-       email VARCHAR(100) UNIQUE NOT NULL,
-       phone_number VARCHAR(15) NOT NULL,
-       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-   );
-   ```
-
-5. **`Tickets`** *(Auto-generates PNR)*  
-   ```sql
-   CREATE TABLE Tickets (
-       ticket_id INT AUTO_INCREMENT PRIMARY KEY,
-       pnr_number VARCHAR(10) UNIQUE DEFAULT CONCAT('PNR', FLOOR(RAND() * 900000) + 100000),
-       passenger_id INT NOT NULL,
-       train_id INT NOT NULL,
-       class_id INT NOT NULL,
-       journey_date DATE NOT NULL,
-       seat_number VARCHAR(10),
-       status ENUM('Confirmed', 'Waiting', 'Cancelled') DEFAULT 'Confirmed',
-       FOREIGN KEY (passenger_id) REFERENCES Passengers(passenger_id),
-       FOREIGN KEY (train_id) REFERENCES Trains(train_id),
-       FOREIGN KEY (class_id) REFERENCES Train_Classes(class_id)
-   );
-   ```
-
-6. **`Payments`** *(Auto-generates TXN ID)*  
-   ```sql
-   CREATE TABLE Payments (
-       payment_id INT AUTO_INCREMENT PRIMARY KEY,
-       ticket_id INT NOT NULL,
-       amount DECIMAL(10,2) NOT NULL,
-       transaction_id VARCHAR(20) UNIQUE DEFAULT CONCAT('TXN', FLOOR(RAND() * 900000000) + 100000000),
-       status ENUM('Success', 'Failed', 'Refunded') DEFAULT 'Success',
-       FOREIGN KEY (ticket_id) REFERENCES Tickets(ticket_id)
-   );
-   ```
-
-7. **`Bookings`** *(Links tickets to passengers)*  
-   ```sql
-   CREATE TABLE Bookings (
-       booking_id INT AUTO_INCREMENT PRIMARY KEY,
-       ticket_id INT NOT NULL,
-       passenger_id INT NOT NULL,
-       booking_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-       FOREIGN KEY (ticket_id) REFERENCES Tickets(ticket_id),
-       FOREIGN KEY (passenger_id) REFERENCES Passengers(passenger_id)
-   );
-   ```
-
-8. **`Refunds`**  
-   ```sql
-   CREATE TABLE Refunds (
-       refund_id INT AUTO_INCREMENT PRIMARY KEY,
-       ticket_id INT NOT NULL,
-       amount DECIMAL(10,2) NOT NULL,
-       processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-       FOREIGN KEY (ticket_id) REFERENCES Tickets(ticket_id)
-   );
-   ```
+### **1. Passengers**
+- `passenger_id` (PK)
+- `first_name`
+- `last_name`
+- `email` (unique)
+- `phone_number`
+- `address`
+- `date_of_birth`
+- `gender`
+- `created_at` (timestamp)
 
 ---
 
-### **Support Tables (5)**
-9. **`Train_Schedules`**  
-   ```sql
-   CREATE TABLE Train_Schedules (
-       schedule_id INT AUTO_INCREMENT PRIMARY KEY,
-       train_id INT NOT NULL,
-       departure_time TIME NOT NULL,
-       arrival_time TIME NOT NULL,
-       day_of_week ENUM('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun') NOT NULL,
-       FOREIGN KEY (train_id) REFERENCES Trains(train_id)
-   );
-   ```
-
-10. **`Seat_Availability`** *(Real-time updates)*  
-    ```sql
-    CREATE TABLE Seat_Availability (
-        availability_id INT AUTO_INCREMENT PRIMARY KEY,
-        train_id INT NOT NULL,
-        journey_date DATE NOT NULL,
-        class_id INT NOT NULL,
-        available_seats INT DEFAULT 0,
-        waitlist_seats INT DEFAULT 0,
-        FOREIGN KEY (train_id) REFERENCES Trains(train_id),
-        FOREIGN KEY (class_id) REFERENCES Train_Classes(class_id),
-        UNIQUE (train_id, journey_date, class_id)
-    );
-    ```
-
-11. **`Fares`** *(Dynamic pricing)*  
-    ```sql
-    CREATE TABLE Fares (
-        fare_id INT AUTO_INCREMENT PRIMARY KEY,
-        train_id INT NOT NULL,
-        class_id INT NOT NULL,
-        source_station_id INT NOT NULL,
-        destination_station_id INT NOT NULL,
-        fare DECIMAL(10,2) NOT NULL,
-        FOREIGN KEY (train_id) REFERENCES Trains(train_id),
-        FOREIGN KEY (class_id) REFERENCES Train_Classes(class_id),
-        FOREIGN KEY (source_station_id) REFERENCES Stations(station_id),
-        FOREIGN KEY (destination_station_id) REFERENCES Stations(station_id)
-    );
-    ```
-
-12. **`User_Credentials`** *(Login system)*  
-    ```sql
-    CREATE TABLE User_Credentials (
-        user_id INT PRIMARY KEY,
-        username VARCHAR(50) UNIQUE NOT NULL,
-        password_hash VARCHAR(255) NOT NULL,
-        last_login TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES Passengers(passenger_id) ON DELETE CASCADE
-    );
-    ```
-
-13. **`Cancellation_Rules`** *(Refund policies)*  
-    ```sql
-    CREATE TABLE Cancellation_Rules (
-        rule_id INT AUTO_INCREMENT PRIMARY KEY,
-        hours_before_departure INT NOT NULL,  -- e.g., 48
-        refund_percentage DECIMAL(5,2) NOT NULL  -- e.g., 75.00
-    );
-    ```
+### **2. User_Credentials** (for login)
+- `user_id` (PK, FK → Passengers.passenger_id)
+- `username` (unique)
+- `password_hash`
+- `account_status` (active/inactive)
+- `last_login` (timestamp)
+- `failed_attempts` (for security)
 
 ---
 
-### **Key Features**
-- **Auto-generated IDs**: All primary keys use `AUTO_INCREMENT`.
-- **User-friendly fields**:  
-  - PNR numbers: `PNR384756` (random 6-digit suffix)  
-  - Transaction IDs: `TXN123456789` (random 9-digit suffix)  
-- **No manual ID entry**: Users interact with names/PNRs, not database IDs.
-- **Real-world constraints**:  
-  - Unique PNRs/transaction IDs  
-  - Check constraints (e.g., `source_station != destination_station`)  
+### **3. Trains**
+- `train_id` (PK)
+- `train_number` (unique)
+- `train_name`
+- `source_station_id` (FK → Stations.station_id)
+- `destination_station_id` (FK → Stations.station_id)
+- `total_seats`
+- `is_active` (boolean)
 
-This schema covers all requirements from your diagram while ensuring data integrity. Let me know if you'd like to adjust any tables!
+---
+
+### **4. Train_Schedules**
+- `schedule_id` (PK)
+- `train_id` (FK → Trains.train_id)
+- `departure_time`
+- `arrival_time`
+- `running_days` (e.g., "Mon,Wed,Fri")
+- `duration_minutes`
+
+---
+
+### **5. Stations**
+- `station_id` (PK)
+- `station_name`
+- `station_code` (unique, e.g., "DEL" for Delhi)
+
+---
+
+### **6. Tickets**
+- `ticket_id` (PK)
+- `pnr_number` (unique, auto-generated)
+- `passenger_id` (FK → Passengers.passenger_id)
+- `train_id` (FK → Trains.train_id)
+- `booking_date`
+- `journey_date`
+- `seat_number`
+- `coach_number`
+- `ticket_status` (confirmed/waiting/cancelled)
+- `fare_amount`
+
+---
+
+### **7. Bookings**
+- `booking_id` (PK)
+- `ticket_id` (FK → Tickets.ticket_id)
+- `passenger_id` (FK → Passengers.passenger_id)
+- `booking_status` (success/failed/pending)
+- `total_amount`
+- `booking_time` (timestamp)
+
+---
+
+### **8. Payments**
+- `payment_id` (PK)
+- `booking_id` (FK → Bookings.booking_id)
+- `amount_paid`
+- `payment_method` (credit card/UPI/wallet)
+- `transaction_id` (unique)
+- `payment_status` (success/failed/refunded)
+- `payment_time` (timestamp)
+
+---
+
+### **9. Refunds**
+- `refund_id` (PK)
+- `ticket_id` (FK → Tickets.ticket_id)
+- `refund_amount`
+- `refund_status` (processed/pending)
+- `refund_date` (timestamp)
+
+---
+
+### **10. Seat_Availability**
+- `availability_id` (PK)
+- `train_id` (FK → Trains.train_id)
+- `journey_date`
+- `class_type` (FK → Train_Classes.class_id)
+- `available_seats`
+- `waitlist_seats`
+
+---
+
+### **11. Train_Classes**
+- `class_id` (PK)
+- `class_name` (e.g., "Sleeper", "AC 3-tier")
+- `base_fare_multiplier` (e.g., 1.0 for Sleeper, 2.5 for AC)
+
+---
+
+### **12. Fare_Details**
+- `fare_id` (PK)
+- `train_id` (FK → Trains.train_id)
+- `class_id` (FK → Train_Classes.class_id)
+- `source_station_id` (FK → Stations.station_id)
+- `destination_station_id` (FK → Stations.station_id)
+- `fare_amount`
+
+---
+
+### **13. Ticket_Status**
+- `status_id` (PK)
+- `status_name` (e.g., "Confirmed", "Waiting", "Cancelled")
+
+---
+
+### **Relationships Summary**
+- **Passengers** → **Bookings** (One-to-Many)  
+- **Trains** → **Train_Schedules** (One-to-Many)  
+- **Tickets** → **Payments** (One-to-One)  
+- **Bookings** → **Refunds** (One-to-Many, if applicable)  
+- **Seat_Availability** depends on **Trains** + **Train_Classes**  
+
+This schema covers all functionalities shown in the image (registration, train details, ticket booking, PNR status, and refunds). Let me know if you'd like any modifications!

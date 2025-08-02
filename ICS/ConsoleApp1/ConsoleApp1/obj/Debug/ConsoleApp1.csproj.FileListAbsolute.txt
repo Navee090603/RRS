@@ -1,7 +1,0 @@
-C:\Users\naveent\OneDrive - Infinite Computer Solutions (India) Limited\Desktop\Railway Reservation System\ConsoleApp1\ConsoleApp1\bin\Debug\ConsoleApp1.exe.config
-C:\Users\naveent\OneDrive - Infinite Computer Solutions (India) Limited\Desktop\Railway Reservation System\ConsoleApp1\ConsoleApp1\bin\Debug\ConsoleApp1.exe
-C:\Users\naveent\OneDrive - Infinite Computer Solutions (India) Limited\Desktop\Railway Reservation System\ConsoleApp1\ConsoleApp1\bin\Debug\ConsoleApp1.pdb
-C:\Users\naveent\OneDrive - Infinite Computer Solutions (India) Limited\Desktop\Railway Reservation System\ConsoleApp1\ConsoleApp1\obj\Debug\ConsoleApp1.csproj.AssemblyReference.cache
-C:\Users\naveent\OneDrive - Infinite Computer Solutions (India) Limited\Desktop\Railway Reservation System\ConsoleApp1\ConsoleApp1\obj\Debug\ConsoleApp1.csproj.CoreCompileInputs.cache
-C:\Users\naveent\OneDrive - Infinite Computer Solutions (India) Limited\Desktop\Railway Reservation System\ConsoleApp1\ConsoleApp1\obj\Debug\ConsoleApp1.exe
-C:\Users\naveent\OneDrive - Infinite Computer Solutions (India) Limited\Desktop\Railway Reservation System\ConsoleApp1\ConsoleApp1\obj\Debug\ConsoleApp1.pdb

@@ -1,56 +1,85 @@
 using System;
+using System.Data;
 using System.Windows.Forms;
 
 namespace RailwayReservationWin
 {
-    public class StartForm : Form
+    public class LoginForm : Form
     {
+        // Controls
+        private Label lblEmail;
+        private TextBox txtEmail;
+        private Label lblPassword;
+        private TextBox txtPassword;
         private Button btnLogin;
-        private Button btnRegister;
 
-        public StartForm()
+        // ADO.NET DataAccess instance
+        private DataAccess db = new DataAccess();
+
+        public LoginForm()
         {
-            this.Text = "Railway Reservation";
-            this.Width = 320;
-            this.Height = 180;
+            // Manual UI setup
+            this.Text = "Railway Reservation - Login";
+            this.Width = 340;
+            this.Height = 210;
             this.StartPosition = FormStartPosition.CenterScreen;
 
-            btnLogin = new Button
-            {
-                Text = "Login",
-                Left = 50,
-                Top = 50,
-                Width = 90
-            };
-            btnLogin.Click += BtnLogin_Click;
+            lblEmail = new Label { Text = "Email:", Left = 30, Top = 30, Width = 80 };
+            txtEmail = new TextBox { Left = 120, Top = 28, Width = 160 };
 
-            btnRegister = new Button
-            {
-                Text = "Register",
-                Left = 160,
-                Top = 50,
-                Width = 90
-            };
-            btnRegister.Click += BtnRegister_Click;
+            lblPassword = new Label { Text = "Password:", Left = 30, Top = 70, Width = 80 };
+            txtPassword = new TextBox { Left = 120, Top = 68, Width = 160, PasswordChar = '*' };
 
+            btnLogin = new Button { Text = "Login", Left = 120, Top = 110, Width = 160 };
+            btnLogin.Click += btnLogin_Click;
+
+            this.Controls.Add(lblEmail);
+            this.Controls.Add(txtEmail);
+            this.Controls.Add(lblPassword);
+            this.Controls.Add(txtPassword);
             this.Controls.Add(btnLogin);
-            this.Controls.Add(btnRegister);
+
+            // Allow Enter key to trigger login
+            this.AcceptButton = btnLogin;
         }
 
-        private void BtnLogin_Click(object sender, EventArgs e)
+        private void btnLogin_Click(object sender, EventArgs e)
         {
-            this.Hide();
-            var loginForm = new LoginForm();
-            loginForm.ShowDialog();
-            this.Show();
-        }
+            string email = txtEmail.Text.Trim();
+            string password = txtPassword.Text.Trim();
 
-        private void BtnRegister_Click(object sender, EventArgs e)
-        {
-            this.Hide();
-            var registerForm = new RegisterForm();
-            registerForm.ShowDialog();
-            this.Show();
+            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
+            {
+                MessageBox.Show("Please enter both email and password.", "Login Failed", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            // Call the ADO.NET DataAccess as per your provided code
+            DataTable dt = db.ExecuteTable("sp_LoginUser",
+                new System.Data.SqlClient.SqlParameter("@Email", email),
+                new System.Data.SqlClient.SqlParameter("@Password", password)
+            );
+
+            if (dt.Rows.Count > 0)
+            {
+                int success = Convert.ToInt32(dt.Rows[0]["Success"]);
+                string message = dt.Rows[0]["Message"].ToString();
+                if (success == 1)
+                {
+                    MessageBox.Show("Login Successful, Welcome " + dt.Rows[0]["name"]);
+                    // Open MainForm (pass user_id), close/hide login
+                    this.Hide();
+                    new MainForm(dt.Rows[0]["user_id"].ToString()).Show();
+                }
+                else
+                {
+                    MessageBox.Show(message, "Login Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            else
+            {
+                MessageBox.Show("Login failed. Please check your credentials.", "Login Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
     }
 }

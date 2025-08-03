@@ -4,81 +4,112 @@ using System.Windows.Forms;
 
 namespace RailwayReservationWin
 {
-    public class LoginForm : Form
+    public class RegisterForm : Form
     {
-        // Controls
+        private Label lblName;
+        private TextBox txtName;
         private Label lblEmail;
         private TextBox txtEmail;
+        private Label lblPhone;
+        private TextBox txtPhone;
         private Label lblPassword;
         private TextBox txtPassword;
-        private Button btnLogin;
+        private Label lblDob;
+        private DateTimePicker dtpDob;
+        private Label lblGender;
+        private ComboBox cmbGender;
+        private Button btnRegister;
 
-        // ADO.NET DataAccess instance
         private DataAccess db = new DataAccess();
 
-        public LoginForm()
+        public RegisterForm()
         {
-            // Manual UI setup
-            this.Text = "Railway Reservation - Login";
-            this.Width = 340;
-            this.Height = 210;
+            this.Text = "Register New User";
+            this.Width = 350;
+            this.Height = 400;
             this.StartPosition = FormStartPosition.CenterScreen;
 
-            lblEmail = new Label { Text = "Email:", Left = 30, Top = 30, Width = 80 };
-            txtEmail = new TextBox { Left = 120, Top = 28, Width = 160 };
+            lblName = new Label { Text = "Name:", Left = 30, Top = 30, Width = 100 };
+            txtName = new TextBox { Left = 140, Top = 28, Width = 160 };
 
-            lblPassword = new Label { Text = "Password:", Left = 30, Top = 70, Width = 80 };
-            txtPassword = new TextBox { Left = 120, Top = 68, Width = 160, PasswordChar = '*' };
+            lblEmail = new Label { Text = "Email:", Left = 30, Top = 70, Width = 100 };
+            txtEmail = new TextBox { Left = 140, Top = 68, Width = 160 };
 
-            btnLogin = new Button { Text = "Login", Left = 120, Top = 110, Width = 160 };
-            btnLogin.Click += btnLogin_Click;
+            lblPhone = new Label { Text = "Phone:", Left = 30, Top = 110, Width = 100 };
+            txtPhone = new TextBox { Left = 140, Top = 108, Width = 160 };
 
+            lblPassword = new Label { Text = "Password:", Left = 30, Top = 150, Width = 100 };
+            txtPassword = new TextBox { Left = 140, Top = 148, Width = 160, PasswordChar = '*' };
+
+            lblDob = new Label { Text = "Date of Birth:", Left = 30, Top = 190, Width = 100 };
+            dtpDob = new DateTimePicker { Left = 140, Top = 188, Width = 160, Format = DateTimePickerFormat.Short };
+
+            lblGender = new Label { Text = "Gender:", Left = 30, Top = 230, Width = 100 };
+            cmbGender = new ComboBox { Left = 140, Top = 228, Width = 160, DropDownStyle = ComboBoxStyle.DropDownList };
+            cmbGender.Items.AddRange(new string[] { "male", "female", "other" });
+
+            btnRegister = new Button { Text = "Register", Left = 140, Top = 280, Width = 160 };
+            btnRegister.Click += BtnRegister_Click;
+
+            this.Controls.Add(lblName);
+            this.Controls.Add(txtName);
             this.Controls.Add(lblEmail);
             this.Controls.Add(txtEmail);
+            this.Controls.Add(lblPhone);
+            this.Controls.Add(txtPhone);
             this.Controls.Add(lblPassword);
             this.Controls.Add(txtPassword);
-            this.Controls.Add(btnLogin);
-
-            // Allow Enter key to trigger login
-            this.AcceptButton = btnLogin;
+            this.Controls.Add(lblDob);
+            this.Controls.Add(dtpDob);
+            this.Controls.Add(lblGender);
+            this.Controls.Add(cmbGender);
+            this.Controls.Add(btnRegister);
         }
 
-        private void btnLogin_Click(object sender, EventArgs e)
+        private void BtnRegister_Click(object sender, EventArgs e)
         {
-            string email = txtEmail.Text.Trim();
-            string password = txtPassword.Text.Trim();
-
-            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
+            // Validation
+            if (string.IsNullOrWhiteSpace(txtName.Text) ||
+                string.IsNullOrWhiteSpace(txtEmail.Text) ||
+                string.IsNullOrWhiteSpace(txtPhone.Text) ||
+                string.IsNullOrWhiteSpace(txtPassword.Text))
             {
-                MessageBox.Show("Please enter both email and password.", "Login Failed", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Please fill all required fields (Name, Email, Phone, Password).", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            if (cmbGender.SelectedIndex == -1)
+            {
+                MessageBox.Show("Please select Gender.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            // Call the ADO.NET DataAccess as per your provided code
-            DataTable dt = db.ExecuteTable("sp_LoginUser",
-                new System.Data.SqlClient.SqlParameter("@Email", email),
-                new System.Data.SqlClient.SqlParameter("@Password", password)
+            // Call ADO.NET registration
+            DataTable dt = db.ExecuteTable("sp_registeruser",
+                new System.Data.SqlClient.SqlParameter("@name", txtName.Text.Trim()),
+                new System.Data.SqlClient.SqlParameter("@email", txtEmail.Text.Trim()),
+                new System.Data.SqlClient.SqlParameter("@phone", txtPhone.Text.Trim()),
+                new System.Data.SqlClient.SqlParameter("@password", txtPassword.Text.Trim()),
+                new System.Data.SqlClient.SqlParameter("@dateofbirth", dtpDob.Value.Date),
+                new System.Data.SqlClient.SqlParameter("@gender", cmbGender.SelectedItem.ToString())
             );
 
             if (dt.Rows.Count > 0)
             {
-                int success = Convert.ToInt32(dt.Rows[0]["Success"]);
-                string message = dt.Rows[0]["Message"].ToString();
+                int success = Convert.ToInt32(dt.Rows[0]["success"]);
+                string message = dt.Rows[0]["message"].ToString();
                 if (success == 1)
                 {
-                    MessageBox.Show("Login Successful, Welcome " + dt.Rows[0]["name"]);
-                    // Open MainForm (pass user_id), close/hide login
-                    this.Hide();
-                    new MainForm(dt.Rows[0]["user_id"].ToString()).Show();
+                    MessageBox.Show("Registration successful! Please login.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    this.Close();
                 }
                 else
                 {
-                    MessageBox.Show(message, "Login Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show(message, "Registration Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
             else
             {
-                MessageBox.Show("Login failed. Please check your credentials.", "Login Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Registration failed. Please try again.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
     }

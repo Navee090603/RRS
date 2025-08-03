@@ -1,0 +1,56 @@
+using System;
+using System.Windows.Forms;
+
+namespace RailwayReservationWin
+{
+    public class StartForm : Form
+    {
+        private Button btnLogin;
+        private Button btnRegister;
+
+        public StartForm()
+        {
+            this.Text = "Railway Reservation";
+            this.Width = 320;
+            this.Height = 180;
+            this.StartPosition = FormStartPosition.CenterScreen;
+
+            btnLogin = new Button
+            {
+                Text = "Login",
+                Left = 50,
+                Top = 50,
+                Width = 90
+            };
+            btnLogin.Click += BtnLogin_Click;
+
+            btnRegister = new Button
+            {
+                Text = "Register",
+                Left = 160,
+                Top = 50,
+                Width = 90
+            };
+            btnRegister.Click += BtnRegister_Click;
+
+            this.Controls.Add(btnLogin);
+            this.Controls.Add(btnRegister);
+        }
+
+        private void BtnLogin_Click(object sender, EventArgs e)
+        {
+            this.Hide();
+            var loginForm = new LoginForm();
+            loginForm.ShowDialog();
+            this.Show();
+        }
+
+        private void BtnRegister_Click(object sender, EventArgs e)
+        {
+            this.Hide();
+            var registerForm = new RegisterForm();
+            registerForm.ShowDialog();
+            this.Show();
+        }
+    }
+}

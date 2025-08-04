@@ -1,0 +1,1054 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Data;
+using System.Data.SqlClient;
+using System.Configuration;
+
+namespace ConsoleApp1
+{
+    class Program
+    {
+        static DataAccess db = new DataAccess();
+        static int? loggedInUserId = null;
+        static string loggedInUserName = null;
+        static string loggedInUserType = null;
+
+        static void Main(string[] args)
+        {
+            while (true)
+            {
+                if (loggedInUserId == null)
+                {
+                    ShowGuestMenu();
+                }
+                else if (loggedInUserType == "admin")
+                {
+                    ShowAdminMenu();
+                }
+                else
+                {
+                    ShowUserMenu();
+                }
+            }
+        }
+
+        static void ShowGuestMenu()
+        {
+            Console.WriteLine("\n=== Railway Reservation System ===");
+            Console.WriteLine("1. Register");
+            Console.WriteLine("2. Login");
+            Console.WriteLine("3. Exit");
+            Console.Write("Select option: ");
+            string opt = Console.ReadLine();
+
+            try
+            {
+                switch (opt)
+                {
+                    case "1":
+                        RegisterUser();
+                        break;
+                    case "2":
+                        LoginUser();
+                        break;
+                    case "3":
+                        Environment.Exit(0);
+                        break;
+                    default:
+                        Console.WriteLine("Invalid option.");
+                        break;
+                }
+            }
+            catch (SqlException ex)
+            {
+                Console.WriteLine($"SQL Error: {ex.Message}");
+            }
+            catch (FormatException)
+            {
+                Console.WriteLine("Invalid input format. Please try again.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"General Error: {ex.Message}");
+            }
+        }
+
+        static void ShowUserMenu()
+        {
+            Console.WriteLine($"\n=== Welcome {loggedInUserName} (User) ===");
+            Console.WriteLine("1. Book Ticket");
+            Console.WriteLine("2. View My Bookings");
+            Console.WriteLine("3. Cancel Booking");
+            Console.WriteLine("4. Logout");
+            Console.Write("Select option: ");
+            string opt = Console.ReadLine();
+
+            try
+            {
+                switch (opt)
+                {
+                    case "1":
+                        BookTicket();
+                        break;
+                    case "2":
+                        ViewBookings();
+                        break;
+                    case "3":
+                        CancelBooking();
+                        break;
+                    case "4":
+                        Logout();
+                        break;
+                    default:
+                        Console.WriteLine("Invalid option.");
+                        break;
+                }
+            }
+            catch (SqlException ex)
+            {
+                Console.WriteLine($"SQL Error: {ex.Message}");
+            }
+            catch (FormatException)
+            {
+                Console.WriteLine("Invalid input format. Please try again.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"General Error: {ex.Message}");
+            }
+        }
+
+        static void ShowAdminMenu()
+        {
+            Console.WriteLine($"\n=== Welcome {loggedInUserName} (Admin) ===");
+            Console.WriteLine("1. Manage Trains");
+            Console.WriteLine("2. Manage Stations");
+            Console.WriteLine("3. Manage Users");
+            Console.WriteLine("4. Generate Reports");
+            Console.WriteLine("5. View System Logs");
+            Console.WriteLine("6. Logout");
+            Console.Write("Select option: ");
+            string opt = Console.ReadLine();
+
+            try
+            {
+                switch (opt)
+                {
+                    case "1":
+                        ManageTrains();
+                        break;
+                    case "2":
+                        ManageStations();
+                        break;
+                    case "3":
+                        ManageUsers();
+                        break;
+                    case "4":
+                        GenerateReports();
+                        break;
+                    case "5":
+                        ViewSystemLogs();
+                        break;
+                    case "6":
+                        Logout();
+                        break;
+                    default:
+                        Console.WriteLine("Invalid option.");
+                        break;
+                }
+            }
+            catch (SqlException ex)
+            {
+                Console.WriteLine($"SQL Error: {ex.Message}");
+            }
+            catch (FormatException)
+            {
+                Console.WriteLine("Invalid input format. Please try again.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"General Error: {ex.Message}");
+            }
+        }
+
+        static void Logout()
+        {
+            loggedInUserId = null;
+            loggedInUserName = null;
+            loggedInUserType = null;
+            Console.WriteLine("Logged out successfully.");
+        }
+
+        static void RegisterUser()
+        {
+            try
+            {
+                Console.Write("Name: "); string name = Console.ReadLine();
+                Console.Write("Email: "); string email = Console.ReadLine();
+                Console.Write("Phone: "); string phone = Console.ReadLine();
+                Console.Write("Password: "); string password = Console.ReadLine();
+                Console.Write("Date of Birth (YYYY-MM-DD): "); string dobStr = Console.ReadLine();
+                Console.Write("Gender (male/female/other): "); string gender = Console.ReadLine();
+
+                DateTime dob;
+                if (!DateTime.TryParse(dobStr, out dob))
+                    dob = DateTime.Now;
+
+                var dt = db.ExecuteTable("sp_registeruser",
+                    new SqlParameter("@name", name),
+                    new SqlParameter("@email", email),
+                    new SqlParameter("@phone", phone),
+                    new SqlParameter("@password", password),
+                    new SqlParameter("@dateofbirth", dob),
+                    new SqlParameter("@gender", gender)
+                );
+
+                if (dt.Rows.Count > 0)
+                {
+                    var success = Convert.ToInt32(dt.Rows[0]["success"]);
+                    var message = dt.Rows[0]["message"].ToString();
+                    Console.WriteLine(message);
+                }
+                else
+                {
+                    Console.WriteLine("Registration failed. Please try again.");
+                }
+            }
+            catch (SqlException ex)
+            {
+                if (ex.Number == 2627)
+                    Console.WriteLine("Email already exists.");
+                else
+                    Console.WriteLine($"SQL Error: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+        }
+
+        static void LoginUser()
+        {
+            try
+            {
+                Console.Write("Email: "); string email = Console.ReadLine();
+                Console.Write("Password: "); string password = Console.ReadLine();
+
+                var dt = db.ExecuteTable("sp_loginuser",
+                    new SqlParameter("@email", email),
+                    new SqlParameter("@password", password)
+                );
+
+                if (dt.Rows.Count > 0)
+                {
+                    var success = Convert.ToInt32(dt.Rows[0]["success"]);
+                    var message = dt.Rows[0]["message"].ToString();
+                    if (success == 1)
+                    {
+                        loggedInUserId = Convert.ToInt32(dt.Rows[0]["user_id"]);
+                        loggedInUserName = dt.Rows[0]["name"].ToString();
+                        loggedInUserType = dt.Rows[0]["user_type"].ToString().ToLower();
+                        Console.WriteLine($"Login successful. Welcome, {loggedInUserName}!");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Login failed: {message}");
+                        loggedInUserId = null;
+                        loggedInUserName = null;
+                        loggedInUserType = null;
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Login failed. Please check your credentials.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+        }
+
+        static void BookTicket()
+        {
+            if (loggedInUserId == null)
+            {
+                Console.WriteLine("Please login first to book tickets.");
+                return;
+            }
+
+            try
+            {
+                // Show stations
+                var stations = db.ExecuteTable("sp_getallstations");
+                Console.WriteLine("\nStations:");
+                foreach (DataRow row in stations.Rows)
+                {
+                    Console.WriteLine($"{row["station_id"]} - {row["station_name"]} ({row["station_code"]})");
+                }
+                Console.Write("Source Station ID: ");
+                int sourceId = int.Parse(Console.ReadLine());
+                Console.Write("Destination Station ID: ");
+                int destId = int.Parse(Console.ReadLine());
+                Console.Write("Journey Date (YYYY-MM-DD): ");
+                DateTime journeyDate = DateTime.Parse(Console.ReadLine());
+                Console.Write("Seat Type (sleeper/ac3/ac2): ");
+                string seatType = Console.ReadLine();
+                Console.Write("Passenger Count: ");
+                int passengerCount = int.Parse(Console.ReadLine());
+
+                // Search trains
+                var trains = db.ExecuteTable("sp_searchtrains",
+                    new SqlParameter("@sourcestationid", sourceId),
+                    new SqlParameter("@destinationstationid", destId),
+                    new SqlParameter("@journeydate", journeyDate),
+                    new SqlParameter("@seattype", seatType),
+                    new SqlParameter("@passengercount", passengerCount)
+                );
+
+                if (trains.Rows.Count == 0)
+                {
+                    Console.WriteLine("No trains found for the given criteria.");
+                    return;
+                }
+
+                Console.WriteLine("\nAvailable Trains:");
+                foreach (DataRow row in trains.Rows)
+                {
+                    Console.WriteLine($"TrainID: {row["train_id"]}, Name: {row["train_name"]}, Dep:{row["departure_time"]}, Arr:{row["arrival_time"]}, Seats:{row["available_seats"]}, Fare/Person:{row["fare_per_passenger"]}, Status:{row["booking_status"]}");
+                }
+
+                Console.Write("Enter Train ID to book: ");
+                int trainId = int.Parse(Console.ReadLine());
+
+                // Passenger details
+                string[] names = new string[passengerCount];
+                string[] ages = new string[passengerCount];
+                string[] genders = new string[passengerCount];
+                for (int i = 0; i < passengerCount; i++)
+                {
+                    Console.WriteLine($"\nPassenger {i + 1}:");
+                    Console.Write("  Name: "); names[i] = Console.ReadLine();
+                    Console.Write("  Age: "); ages[i] = Console.ReadLine();
+                    Console.Write("  Gender (male/female/other): "); genders[i] = Console.ReadLine();
+                }
+
+                Console.Write("Payment Method (UPI/NetBanking/CreditCard/DebitCard): ");
+                string paymentMethod = Console.ReadLine();
+                string transactionId = Guid.NewGuid().ToString();
+
+                // Prepare output parameters
+                var bookingIdParam = new SqlParameter("@BookingId", SqlDbType.Int) { Direction = ParameterDirection.Output };
+                var pnrParam = new SqlParameter("@PNRNumber", SqlDbType.NVarChar, 20) { Direction = ParameterDirection.Output };
+                var amountParam = new SqlParameter("@TotalAmount", SqlDbType.Decimal) { Direction = ParameterDirection.Output };
+                var statusParam = new SqlParameter("@Status", SqlDbType.NVarChar, 20) { Direction = ParameterDirection.Output };
+
+                db.ExecuteNonQuery("sp_MakeBooking",
+                    new SqlParameter("@UserId", loggedInUserId),
+                    new SqlParameter("@TrainId", trainId),
+                    new SqlParameter("@JourneyDate", journeyDate),
+                    new SqlParameter("@PassengerCount", passengerCount),
+                    new SqlParameter("@SeatType", seatType),
+                    new SqlParameter("@PaymentMethod", paymentMethod),
+                    new SqlParameter("@TransactionId", transactionId),
+                    new SqlParameter("@PassengerNames", string.Join(",", names)),
+                    new SqlParameter("@PassengerAges", string.Join(",", ages)),
+                    new SqlParameter("@PassengerGenders", string.Join(",", genders)),
+                    bookingIdParam,
+                    pnrParam,
+                    amountParam,
+                    statusParam
+                );
+
+                Console.WriteLine($"\nBooking Status: {statusParam.Value}\nBooking PNR: {pnrParam.Value}\nAmount: {amountParam.Value}");
+            }
+            catch (SqlException ex)
+            {
+                Console.WriteLine($"SQL Error: {ex.Message}");
+            }
+            catch (FormatException)
+            {
+                Console.WriteLine("Invalid input format. Please try again.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+        }
+
+        static void ViewBookings()
+        {
+            if (loggedInUserId == null)
+            {
+                Console.WriteLine("Please login first to view bookings.");
+                return;
+            }
+
+            try
+            {
+                var ds = db.ExecuteDataSet("sp_GetUserBookings",
+                    new SqlParameter("@UserId", loggedInUserId),
+                    new SqlParameter("@BookingStatus", DBNull.Value),
+                    new SqlParameter("@PageNumber", 1),
+                    new SqlParameter("@PageSize", 10)
+                );
+
+                var dt = ds.Tables[0];
+                if (dt.Rows.Count == 0)
+                {
+                    Console.WriteLine("No bookings found.");
+                    return;
+                }
+
+                Console.WriteLine("\nYour Bookings:");
+                foreach (DataRow row in dt.Rows)
+                {
+                    Console.WriteLine($"PNR: {row["pnr_number"]}, Train: {row["train_name"]}, Date: {row["journey_date"]}, Status: {row["booking_status"]}, Amount: {row["total_amount"]}");
+                }
+                Console.WriteLine($"Total: {ds.Tables[1].Rows[0]["totalrecords"]}");
+            }
+            catch (SqlException ex)
+            {
+                Console.WriteLine($"SQL Error: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+        }
+
+        static void CancelBooking()
+        {
+            if (loggedInUserId == null)
+            {
+                Console.WriteLine("Please login first to cancel a booking.");
+                return;
+            }
+
+            try
+            {
+                Console.Write("Enter PNR to cancel: ");
+                string pnr = Console.ReadLine();
+                Console.Write("Reason for cancellation: ");
+                string reason = Console.ReadLine();
+
+                var dt = db.ExecuteTable("sp_CancelBooking",
+                    new SqlParameter("@PNRNumber", pnr),
+                    new SqlParameter("@UserId", loggedInUserId),
+                    new SqlParameter("@CancellationReason", reason)
+                );
+
+                if (dt.Rows.Count > 0)
+                {
+                    Console.WriteLine($"{dt.Rows[0]["Message"]}\nRefund: {dt.Rows[0]["RefundAmount"]}");
+                }
+                else
+                {
+                    Console.WriteLine("Cancellation failed: No such booking.");
+                }
+            }
+            catch (SqlException ex)
+            {
+                Console.WriteLine($"SQL Error: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+        }
+
+        #region Admin Functions
+
+        static void ManageTrains()
+        {
+            while (true)
+            {
+                Console.WriteLine("\n=== Train Management ===");
+                Console.WriteLine("1. Add New Train");
+                Console.WriteLine("2. View All Trains");
+                Console.WriteLine("3. Generate Seat Availability");
+                Console.WriteLine("4. Back to Main Menu");
+                Console.Write("Select option: ");
+                string opt = Console.ReadLine();
+
+                switch (opt)
+                {
+                    case "1":
+                        AddTrain();
+                        break;
+                    case "2":
+                        ViewAllTrains();
+                        break;
+                    case "3":
+                        GenerateSeatAvailability();
+                        break;
+                    case "4":
+                        return;
+                    default:
+                        Console.WriteLine("Invalid option.");
+                        break;
+                }
+            }
+        }
+
+        static void AddTrain()
+        {
+            try
+            {
+                Console.WriteLine("\n=== Add New Train ===");
+                
+                // Show stations for reference
+                var stations = db.ExecuteTable("sp_getallstations");
+                Console.WriteLine("\nAvailable Stations:");
+                foreach (DataRow row in stations.Rows)
+                {
+                    Console.WriteLine($"{row["station_id"]} - {row["station_name"]} ({row["station_code"]})");
+                }
+
+                Console.Write("Train Number: ");
+                string trainNumber = Console.ReadLine();
+                Console.Write("Train Name: ");
+                string trainName = Console.ReadLine();
+                Console.Write("Source Station ID: ");
+                int sourceId = int.Parse(Console.ReadLine());
+                Console.Write("Destination Station ID: ");
+                int destId = int.Parse(Console.ReadLine());
+                Console.Write("Departure Time (HH:MM): ");
+                TimeSpan departureTime = TimeSpan.Parse(Console.ReadLine());
+                Console.Write("Arrival Time (HH:MM): ");
+                TimeSpan arrivalTime = TimeSpan.Parse(Console.ReadLine());
+                Console.Write("Running Days (e.g., 1111100 for Mon-Fri): ");
+                string runningDays = Console.ReadLine();
+                Console.Write("Total Seats: ");
+                int totalSeats = int.Parse(Console.ReadLine());
+                Console.Write("Sleeper Seats: ");
+                int sleeperSeats = int.Parse(Console.ReadLine());
+                Console.Write("AC3 Seats: ");
+                int ac3Seats = int.Parse(Console.ReadLine());
+                Console.Write("AC2 Seats: ");
+                int ac2Seats = int.Parse(Console.ReadLine());
+                Console.Write("Sleeper Fare: ");
+                decimal sleeperFare = decimal.Parse(Console.ReadLine());
+                Console.Write("AC3 Fare: ");
+                decimal ac3Fare = decimal.Parse(Console.ReadLine());
+                Console.Write("AC2 Fare: ");
+                decimal ac2Fare = decimal.Parse(Console.ReadLine());
+
+                var result = db.ExecuteScalar("sp_addtrain",
+                    new SqlParameter("@admin_id", loggedInUserId),
+                    new SqlParameter("@train_number", trainNumber),
+                    new SqlParameter("@train_name", trainName),
+                    new SqlParameter("@source_station_id", sourceId),
+                    new SqlParameter("@destination_station_id", destId),
+                    new SqlParameter("@departure_time", departureTime),
+                    new SqlParameter("@arrival_time", arrivalTime),
+                    new SqlParameter("@running_days", runningDays),
+                    new SqlParameter("@total_seats", totalSeats),
+                    new SqlParameter("@sleeper_seats", sleeperSeats),
+                    new SqlParameter("@ac3_seats", ac3Seats),
+                    new SqlParameter("@ac2_seats", ac2Seats),
+                    new SqlParameter("@sleeper_fare", sleeperFare),
+                    new SqlParameter("@ac3_fare", ac3Fare),
+                    new SqlParameter("@ac2_fare", ac2Fare)
+                );
+
+                Console.WriteLine($"Train added successfully with ID: {result}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+        }
+
+        static void ViewAllTrains()
+        {
+            try
+            {
+                Console.WriteLine("\n=== All Trains ===");
+                var trains = db.ExecuteTable("SELECT * FROM trains ORDER BY train_name");
+                
+                Console.WriteLine("ID  | Number      | Name                          | Source | Destination | Departure | Arrival | Active");
+                Console.WriteLine("----|-------------|-------------------------------|--------|-------------|-----------|---------|-------");
+                
+                foreach (DataRow row in trains.Rows)
+                {
+                    Console.WriteLine($"{row["train_id"],-3} | {row["train_number"],-11} | {row["train_name"],-30} | " +
+                                    $"{row["source_station_id"],-6} | {row["destination_station_id"],-11} | " +
+                                    $"{row["departure_time"],-9} | {row["arrival_time"],-7} | {(bool)row["is_active"] ? "Yes" : "No"}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+        }
+
+        static void GenerateSeatAvailability()
+        {
+            try
+            {
+                Console.WriteLine("\n=== Generate Seat Availability ===");
+                ViewAllTrains();
+                
+                Console.Write("Enter Train ID: ");
+                int trainId = int.Parse(Console.ReadLine());
+                Console.Write("From Date (YYYY-MM-DD): ");
+                DateTime fromDate = DateTime.Parse(Console.ReadLine());
+                Console.Write("To Date (YYYY-MM-DD): ");
+                DateTime toDate = DateTime.Parse(Console.ReadLine());
+
+                var result = db.ExecuteTable("sp_generateavailability",
+                    new SqlParameter("@admin_id", loggedInUserId),
+                    new SqlParameter("@trainid", trainId),
+                    new SqlParameter("@fromdate", fromDate),
+                    new SqlParameter("@todate", toDate)
+                );
+
+                if (result.Rows.Count > 0)
+                {
+                    Console.WriteLine($"Success: {result.Rows[0]["success"]}, Records Created: {result.Rows[0]["recordscreated"]}");
+                }
+                else
+                {
+                    Console.WriteLine("Failed to generate availability.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+        }
+
+        static void ManageStations()
+        {
+            Console.WriteLine("\n=== Station Management ===");
+            Console.WriteLine("1. View All Stations");
+            Console.WriteLine("2. Back to Main Menu");
+            Console.Write("Select option: ");
+            string opt = Console.ReadLine();
+
+            switch (opt)
+            {
+                case "1":
+                    ViewAllStations();
+                    break;
+                case "2":
+                    return;
+                default:
+                    Console.WriteLine("Invalid option.");
+                    break;
+            }
+        }
+
+        static void ViewAllStations()
+        {
+            try
+            {
+                Console.WriteLine("\n=== All Stations ===");
+                var stations = db.ExecuteTable("SELECT * FROM stations ORDER BY station_name");
+                
+                Console.WriteLine("ID  | Code | Name                          | State          | Active");
+                Console.WriteLine("----|------|-------------------------------|----------------|-------");
+                
+                foreach (DataRow row in stations.Rows)
+                {
+                    Console.WriteLine($"{row["station_id"],-3} | {row["station_code"],-4} | {row["station_name"],-30} | " +
+                                    $"{row["state"],-15} | {(bool)row["is_active"] ? "Yes" : "No"}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+        }
+
+        static void ManageUsers()
+        {
+            while (true)
+            {
+                Console.WriteLine("\n=== User Management ===");
+                Console.WriteLine("1. View All Users");
+                Console.WriteLine("2. Activate/Deactivate User");
+                Console.WriteLine("3. Back to Main Menu");
+                Console.Write("Select option: ");
+                string opt = Console.ReadLine();
+
+                switch (opt)
+                {
+                    case "1":
+                        ViewAllUsers();
+                        break;
+                    case "2":
+                        ToggleUserStatus();
+                        break;
+                    case "3":
+                        return;
+                    default:
+                        Console.WriteLine("Invalid option.");
+                        break;
+                }
+            }
+        }
+
+        static void ViewAllUsers()
+        {
+            try
+            {
+                Console.WriteLine("\n=== All Users ===");
+                var users = db.ExecuteTable("SELECT * FROM users ORDER BY name");
+                
+                Console.WriteLine("ID  | Name                          | Email                     | Phone       | Type    | Active");
+                Console.WriteLine("----|-------------------------------|---------------------------|-------------|---------|-------");
+                
+                foreach (DataRow row in users.Rows)
+                {
+                    Console.WriteLine($"{row["user_id"],-3} | {row["name"],-30} | {row["email"],-25} | " +
+                                    $"{row["phone"],-11} | {row["user_type"],-7} | {(bool)row["is_active"] ? "Yes" : "No"}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+        }
+
+        static void ToggleUserStatus()
+        {
+            try
+            {
+                Console.WriteLine("\n=== Activate/Deactivate User ===");
+                ViewAllUsers();
+                
+                Console.Write("Enter User ID: ");
+                int userId = int.Parse(Console.ReadLine());
+                Console.Write("Activate (1) or Deactivate (0): ");
+                bool activate = Console.ReadLine() == "1";
+
+                var result = db.ExecuteTable("sp_setuseractive",
+                    new SqlParameter("@admin_id", loggedInUserId),
+                    new SqlParameter("@userid", userId),
+                    new SqlParameter("@active", activate)
+                );
+
+                if (result.Rows.Count > 0)
+                {
+                    Console.WriteLine($"User updated: ID {result.Rows[0]["user_id"]}, Name: {result.Rows[0]["name"]}, " +
+                                    $"Active: {(bool)result.Rows[0]["is_active"] ? "Yes" : "No"}");
+                }
+                else
+                {
+                    Console.WriteLine("User not found or update failed.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+        }
+
+        static void GenerateReports()
+        {
+            while (true)
+            {
+                Console.WriteLine("\n=== Reports ===");
+                Console.WriteLine("1. Booking Reports");
+                Console.WriteLine("2. Train Occupancy");
+                Console.WriteLine("3. Revenue Report");
+                Console.WriteLine("4. Back to Main Menu");
+                Console.Write("Select option: ");
+                string opt = Console.ReadLine();
+
+                switch (opt)
+                {
+                    case "1":
+                        BookingReports();
+                        break;
+                    case "2":
+                        TrainOccupancyReport();
+                        break;
+                    case "3":
+                        RevenueReport();
+                        break;
+                    case "4":
+                        return;
+                    default:
+                        Console.WriteLine("Invalid option.");
+                        break;
+                }
+            }
+        }
+
+        static void BookingReports()
+        {
+            try
+            {
+                Console.WriteLine("\n=== Booking Reports ===");
+                Console.Write("From Date (YYYY-MM-DD): ");
+                DateTime fromDate = DateTime.Parse(Console.ReadLine());
+                Console.Write("To Date (YYYY-MM-DD): ");
+                DateTime toDate = DateTime.Parse(Console.ReadLine());
+                Console.Write("Train ID (leave blank for all): ");
+                string trainIdStr = Console.ReadLine();
+                int? trainId = string.IsNullOrEmpty(trainIdStr) ? (int?)null : int.Parse(trainIdStr);
+                Console.Write("Status (confirmed/cancelled/waitlist, leave blank for all): ");
+                string status = Console.ReadLine();
+                if (string.IsNullOrEmpty(status)) status = null;
+
+                var result = db.ExecuteTable("sp_getbookingreports",
+                    new SqlParameter("@fromdate", fromDate),
+                    new SqlParameter("@todate", toDate),
+                    new SqlParameter("@trainid", trainId ?? (object)DBNull.Value),
+                    new SqlParameter("@bookingstatus", status ?? (object)DBNull.Value)
+                );
+
+                if (result.Rows.Count == 0)
+                {
+                    Console.WriteLine("No bookings found for the given criteria.");
+                    return;
+                }
+
+                Console.WriteLine("\nPNR        | Journey Date | Passengers | Amount    | Status    | Train Name");
+                Console.WriteLine("-----------|--------------|------------|-----------|-----------|-------------------");
+                
+                foreach (DataRow row in result.Rows)
+                {
+                    Console.WriteLine($"{row["pnr_number"],-10} | {((DateTime)row["journey_date"]).ToString("yyyy-MM-dd")} | " +
+                                    $"{row["passenger_count"],-10} | {row["total_amount"],-9:C} | " +
+                                    $"{row["booking_status"],-9} | {row["train_name"]}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+        }
+
+        static void TrainOccupancyReport()
+        {
+            try
+            {
+                Console.WriteLine("\n=== Train Occupancy Report ===");
+                ViewAllTrains();
+                
+                Console.Write("Enter Train ID: ");
+                int trainId = int.Parse(Console.ReadLine());
+                Console.Write("From Date (YYYY-MM-DD): ");
+                DateTime fromDate = DateTime.Parse(Console.ReadLine());
+                Console.Write("To Date (YYYY-MM-DD): ");
+                DateTime toDate = DateTime.Parse(Console.ReadLine());
+
+                var result = db.ExecuteTable("sp_gettrainoccupancy",
+                    new SqlParameter("@trainid", trainId),
+                    new SqlParameter("@fromdate", fromDate),
+                    new SqlParameter("@todate", toDate)
+                );
+
+                if (result.Rows.Count == 0)
+                {
+                    Console.WriteLine("No data found for the given criteria.");
+                    return;
+                }
+
+                Console.WriteLine("\nDate       | Train       | Sleeper (B/A) | AC3 (B/A)   | AC2 (B/A)   | Passengers | Revenue   | Occupancy");
+                Console.WriteLine("-----------|-------------|---------------|-------------|-------------|------------|-----------|----------");
+                
+                foreach (DataRow row in result.Rows)
+                {
+                    Console.WriteLine($"{((DateTime)row["journey_date"]).ToString("yyyy-MM-dd")} | {row["train_number"],-11} | " +
+                                    $"{row["sleeper_booked"]}/{row["sleeper_available"]} | " +
+                                    $"{row["ac3_booked"]}/{row["ac3_available"]} | " +
+                                    $"{row["ac2_booked"]}/{row["ac2_available"]} | " +
+                                    $"{row["total_passengers"],-10} | {row["total_revenue"],-9:C} | " +
+                                    $"{row["occupancy_percentage"]}%");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+        }
+
+        static void RevenueReport()
+        {
+            try
+            {
+                Console.WriteLine("\n=== Revenue Report ===");
+                Console.Write("From Date (YYYY-MM-DD): ");
+                DateTime fromDate = DateTime.Parse(Console.ReadLine());
+                Console.Write("To Date (YYYY-MM-DD): ");
+                DateTime toDate = DateTime.Parse(Console.ReadLine());
+                Console.Write("Train ID (leave blank for all): ");
+                string trainIdStr = Console.ReadLine();
+                int? trainId = string.IsNullOrEmpty(trainIdStr) ? (int?)null : int.Parse(trainIdStr);
+                Console.Write("Group by (daily/train): ");
+                string groupBy = Console.ReadLine();
+
+                var result = db.ExecuteTable("sp_getrevenuereport",
+                    new SqlParameter("@fromdate", fromDate),
+                    new SqlParameter("@todate", toDate),
+                    new SqlParameter("@trainid", trainId ?? (object)DBNull.Value),
+                    new SqlParameter("@groupby", groupBy)
+                );
+
+                if (result.Rows.Count == 0)
+                {
+                    Console.WriteLine("No data found for the given criteria.");
+                    return;
+                }
+
+                if (groupBy == "daily")
+                {
+                    Console.WriteLine("\nDate       | Bookings | Passengers | Revenue    | Refunds    | Net Revenue");
+                    Console.WriteLine("-----------|----------|------------|------------|------------|------------");
+                    
+                    foreach (DataRow row in result.Rows)
+                    {
+                        Console.WriteLine($"{((DateTime)row["journey_date"]).ToString("yyyy-MM-dd")} | " +
+                                        $"{row["total_bookings"],-8} | {row["total_passengers"],-10} | " +
+                                        $"{row["total_revenue"],-10:C} | {row["total_refunds"],-10:C} | " +
+                                        $"{Convert.ToDecimal(row["total_revenue"]) - Convert.ToDecimal(row["total_refunds"]),-10:C}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("\nTrain      | Name                          | Bookings | Passengers | Revenue    | Avg Booking");
+                    Console.WriteLine("-----------|-------------------------------|----------|------------|------------|------------");
+                    
+                    foreach (DataRow row in result.Rows)
+                    {
+                        Console.WriteLine($"{row["train_number"],-10} | {row["train_name"],-30} | " +
+                                        $"{row["total_bookings"],-8} | {row["total_passengers"],-10} | " +
+                                        $"{row["total_revenue"],-10:C} | {row["avg_booking_value"],-10:C}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+        }
+
+        static void ViewSystemLogs()
+        {
+            try
+            {
+                Console.WriteLine("\n=== System Logs ===");
+                Console.Write("Show last N logs (default 50): ");
+                string countStr = Console.ReadLine();
+                int count = string.IsNullOrEmpty(countStr) ? 50 : int.Parse(countStr);
+
+                var logs = db.ExecuteTable(
+                    "SELECT TOP (@count) * FROM admin_logs l " +
+                    "JOIN users u ON l.admin_id = u.user_id " +
+                    "ORDER BY log_time DESC",
+                    new SqlParameter("@count", count)
+                );
+
+                if (logs.Rows.Count == 0)
+                {
+                    Console.WriteLine("No logs found.");
+                    return;
+                }
+
+                Console.WriteLine("\nTime                | Admin Name        | Action                      | Target       | Details");
+                Console.WriteLine("--------------------|-------------------|-----------------------------|--------------|-------------------");
+                
+                foreach (DataRow row in logs.Rows)
+                {
+                    Console.WriteLine($"{((DateTime)row["log_time"]).ToString("yyyy-MM-dd HH:mm:ss")} | " +
+                                    $"{row["name"],-17} | {row["action"],-27} | " +
+                                    $"{row["target_table"],-12} | {row["details"]}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+        }
+
+        #endregion
+    }
+
+    public class DataAccess
+    {
+        private readonly string _connStr;
+
+        public DataAccess()
+        {
+            _connStr = ConfigurationManager.ConnectionStrings["RailwayDb"].ConnectionString;
+        }
+
+        public DataTable ExecuteTable(string procName, params SqlParameter[] parameters)
+        {
+            using (SqlConnection conn = new SqlConnection(_connStr))
+            using (SqlCommand cmd = new SqlCommand(procName, conn))
+            {
+                cmd.CommandType = CommandType.StoredProcedure;
+                if (parameters != null)
+                    cmd.Parameters.AddRange(parameters);
+                DataTable dt = new DataTable();
+                SqlDataAdapter da = new SqlDataAdapter(cmd);
+                da.Fill(dt);
+                return dt;
+            }
+        }
+
+        public DataTable ExecuteTable(string query, params SqlParameter[] parameters)
+        {
+            using (SqlConnection conn = new SqlConnection(_connStr))
+            using (SqlCommand cmd = new SqlCommand(query, conn))
+            {
+                if (parameters != null)
+                    cmd.Parameters.AddRange(parameters);
+                DataTable dt = new DataTable();
+                SqlDataAdapter da = new SqlDataAdapter(cmd);
+                da.Fill(dt);
+                return dt;
+            }
+        }
+
+        public DataSet ExecuteDataSet(string procName, params SqlParameter[] parameters)
+        {
+            using (SqlConnection conn = new SqlConnection(_connStr))
+            using (SqlCommand cmd = new SqlCommand(procName, conn))
+            {
+                cmd.CommandType = CommandType.StoredProcedure;
+                if (parameters != null)
+                    cmd.Parameters.AddRange(parameters);
+                DataSet ds = new DataSet();
+                SqlDataAdapter da = new SqlDataAdapter(cmd);
+                da.Fill(ds);
+                return ds;
+            }
+        }
+
+        public int ExecuteNonQuery(string procName, params SqlParameter[] parameters)
+        {
+            using (SqlConnection conn = new SqlConnection(_connStr))
+            using (SqlCommand cmd = new SqlCommand(procName, conn))
+            {
+                cmd.CommandType = CommandType.StoredProcedure;
+                if (parameters != null)
+                    cmd.Parameters.AddRange(parameters);
+                conn.Open();
+                return cmd.ExecuteNonQuery();
+            }
+        }
+
+        public object ExecuteScalar(string procName, params SqlParameter[] parameters)
+        {
+            using (SqlConnection conn = new SqlConnection(_connStr))
+            using (SqlCommand cmd = new SqlCommand(procName, conn))
+            {
+                cmd.CommandType = CommandType.StoredProcedure;
+                if (parameters != null)
+                    cmd.Parameters.AddRange(parameters);
+                conn.Open();
+                return cmd.ExecuteScalar();
+            }
+        }
+    }
+}

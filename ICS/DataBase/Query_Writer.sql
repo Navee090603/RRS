@@ -10,3 +10,8 @@ select * from stations --8
 
 --> Total Number of Tables is "8"
 --> 2,7,8 are hardcoded tables 
+
+--For Active and InActive
+
+--EXEC sp_setuseractive @userid = 2, @active = 0;  -- Deactivate user_id 2
+EXEC sp_setuseractive @userid = 2, @active = 1;  -- Reactivate user_id 2

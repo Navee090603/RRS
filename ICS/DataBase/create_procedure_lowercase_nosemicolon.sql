@@ -394,13 +394,14 @@ begin
     begin try
         declare @bookingid int, @totalamount decimal(10,2), @refundamount decimal(10,2)
         declare @journeydate date, @currentdate date = cast(getdate() as date)
+        declare @bookingstatus nvarchar(20)
 
-        -- get booking details
-        select @bookingid = booking_id, @totalamount = total_amount, @journeydate = journey_date
+        -- get booking details (allow confirmed or waitlist)
+        select @bookingid = booking_id, @totalamount = total_amount, @journeydate = journey_date, @bookingstatus = booking_status
         from bookings
         where pnr_number = @pnrnumber
           and user_id = @userid
-          and booking_status = 'confirmed'
+          and booking_status in ('confirmed', 'waitlist')
 
         if @bookingid is null
         begin
@@ -409,12 +410,19 @@ begin
             return
         end
 
-        -- calculate refund based on cancellation timing
-        declare @daystojourney int = datediff(day, @currentdate, @journeydate)
-        set @refundamount = case
-            when @daystojourney >= 1 then @totalamount * 0.9
-            when @daystojourney >= 0 then @totalamount * 0.5
-            else 0
+        -- calculate refund: for waitlist, charge 10 INR; for confirmed, use existing logic
+        if @bookingstatus = 'waitlist'
+        begin
+            set @refundamount = case when @totalamount > 10 then @totalamount - 10 else 0 end
+        end
+        else
+        begin
+            declare @daystojourney int = datediff(day, @currentdate, @journeydate)
+            set @refundamount = case
+                when @daystojourney >= 1 then @totalamount * 0.9
+                when @daystojourney >= 0 then @totalamount * 0.5
+                else 0
+            end
         end
 
         -- update booking status
@@ -434,7 +442,11 @@ begin
 
         commit transaction
 
-        select 1 as success, 'booking cancelled successfully' as message, @refundamount as refundamount
+        select 1 as success, 
+               case when @bookingstatus = 'waitlist' 
+                    then 'waitlist booking cancelled, 10rs fee charged' 
+                    else 'booking cancelled successfully' end as message, 
+               @refundamount as refundamount
 
     end try
     begin catch
@@ -1048,3 +1060,20 @@ begin
         select 0 as hasduplicate, null as existingpnr, 'no duplicate booking found' as message
     end
 end
+
+--For Activate and Deactivate User
+
+CREATE OR ALTER PROCEDURE sp_setuseractive
+    @userid INT,
+    @active BIT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    UPDATE users
+    SET is_active = @active
+    WHERE user_id = @userid;
+
+    SELECT user_id, name, email, is_active FROM users WHERE user_id = @userid;
+END
+
+

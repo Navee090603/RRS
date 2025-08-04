@@ -64,34 +64,31 @@ insert into trains (
 ('VSKP-NDLS-001', 'Vizag-Noida SF', 5, 4, '11:00', '01:00', '1111111', 950, 700, 200, 50, 1000.00, 1700.00, 2200.00);
 
 
--- SEAT AVAILABILITY - 3 upcoming days for all trains (train_id 1 to 20)
-DECLARE @d1 DATE = DATEADD(day, 1, CAST(GETDATE() AS DATE));
-DECLARE @d2 DATE = DATEADD(day, 2, CAST(GETDATE() AS DATE));
-DECLARE @d3 DATE = DATEADD(day, 3, CAST(GETDATE() AS DATE));
+--INSERT OF SEAT_AVAILABILITY
+-- variables for date range
+declare @fromdate date = cast(getdate() as date);
+declare @todate date = dateadd(day, 119, @fromdate); -- 120 days
 
--- Trains 1 to 20, for @d1, @d2, @d3
-INSERT INTO seat_availability (train_id, journey_date, sleeper_available, ac3_available, ac2_available)
-VALUES
-(2, @d1, 600, 150, 50), (2, @d2, 600, 150, 50), (2, @d3, 600, 150, 50),
-(3, @d1, 600, 150, 50), (3, @d2, 600, 150, 50), (3, @d3, 600, 150, 50),
-(4, @d1, 650, 150, 50), (4, @d2, 650, 150, 50), (4, @d3, 650, 150, 50),
-(5, @d1, 650, 150, 50), (5, @d2, 650, 150, 50), (5, @d3, 650, 150, 50),
-(6, @d1, 700, 150, 50), (6, @d2, 700, 150, 50), (6, @d3, 700, 150, 50),
-(7, @d1, 700, 150, 50), (7, @d2, 700, 150, 50), (7, @d3, 700, 150, 50),
-(8, @d1, 600, 150, 50), (8, @d2, 600, 150, 50), (8, @d3, 600, 150, 50),
-(9, @d1, 600, 150, 50), (9, @d2, 600, 150, 50), (9, @d3, 600, 150, 50),
-(10, @d1, 650, 200, 50), (10, @d2, 650, 200, 50), (10, @d3, 650, 200, 50),
-(11, @d1, 650, 200, 50), (11, @d2, 650, 200, 50), (11, @d3, 650, 200, 50),
-(12, @d1, 700, 300, 200), (12, @d2, 700, 300, 200), (12, @d3, 700, 300, 200),
-(13, @d1, 700, 300, 200), (13, @d2, 700, 300, 200), (13, @d3, 700, 300, 200),
-(14, @d1, 700, 200, 100), (14, @d2, 700, 200, 100), (14, @d3, 700, 200, 100),
-(15, @d1, 700, 200, 100), (15, @d2, 700, 200, 100), (15, @d3, 700, 200, 100),
-(16, @d1, 700, 200, 50), (16, @d2, 700, 200, 50), (16, @d3, 700, 200, 50),
-(17, @d1, 700, 200, 50), (17, @d2, 700, 200, 50), (17, @d3, 700, 200, 50),
-(18, @d1, 650, 150, 50), (18, @d2, 650, 150, 50), (18, @d3, 650, 150, 50),
-(19, @d1, 650, 150, 50), (19, @d2, 650, 150, 50), (19, @d3, 650, 150, 50),
-(20, @d1, 700, 200, 50), (20, @d2, 700, 200, 50), (20, @d3, 700, 200, 50),
-(21, @d1, 700, 200, 50), (21, @d2, 700, 200, 50), (21, @d3, 700, 200, 50);
+-- generate date series
+with daterange as (
+    select @fromdate as journey_date
+    union all
+    select dateadd(day, 1, journey_date)
+    from daterange
+    where journey_date < @todate
+)
+insert into seat_availability (train_id, journey_date, sleeper_available, ac3_available, ac2_available)
+select t.train_id, d.journey_date, t.sleeper_seats, t.ac3_seats, t.ac2_seats
+from trains t
+cross join daterange d
+where t.is_active = 1
+    and not exists (
+        select 1
+        from seat_availability sa
+        where sa.train_id = t.train_id
+          and sa.journey_date = d.journey_date
+    )
+option (maxrecursion 130);
 
 
 ---- OPTIONAL ADMIN LOG FOR AUDIT

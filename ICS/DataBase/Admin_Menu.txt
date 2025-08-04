@@ -1,0 +1,117 @@
+Great question! After reviewing your attached files, here’s a deep analysis on **why `admin_logs` is not getting any records** when you perform admin actions:
+
+---
+
+## 1. **Table Exists, But No Logging Code**
+
+Your table and schema are correct:
+
+```sql
+create table admin_logs (
+    log_id int identity(1,1) primary key,
+    admin_id int not null,
+    action nvarchar(100) not null,
+    target_table nvarchar(50),
+    record_id int,
+    details nvarchar(500),
+    log_time datetime2 default getdate(),
+    foreign key (admin_id) references users(user_id)
+)
+```
+
+But **logging will only happen if you explicitly insert into this table** during admin actions.
+
+---
+
+## 2. **Stored Procedures: Only One Example Logs (And Not Used)**
+
+In your `create_procedure_lowercase_nosemicolon.sql`, only this procedure logs to `admin_logs`:
+
+```sql
+-- a. update passenger seat assignment
+create or alter procedure sp_assignseats
+...
+    -- log the seat assignment activity
+    insert into admin_logs (admin_id, action, target_table, record_id, details)
+    values (1, 'seat assignment', 'passengers', @bookingid, 'seats assigned for booking: ' + cast(@bookingid as nvarchar))
+```
+
+- This uses a **hardcoded admin_id = 1** (not dynamic) and is only for seat assignment, not for booking, cancelling, or generating reports.
+
+---
+
+## 3. **Your App Code Does Not Log Admin Actions**
+
+In your C# code (`Program_Version3.cs`), there is **no code that inserts into `admin_logs`** after any admin operation because:
+
+- There is **no admin menu** in your current app.
+- No admin operations are implemented in the UI.
+- All actions (register, login, book, view, cancel booking) are **customer/user actions**.
+
+---
+
+## 4. **Admin Actions = What?**
+
+Admin actions typically include:
+- Editing/adding/deleting trains, stations, users.
+- Generating reports.
+- Managing seat availability.
+- Assigning seats.
+
+**But in your current app, you have not implemented these yet!**
+
+---
+
+## 5. **How to Fix?**
+
+### a. **Add Admin Menu and Actions in Your App**
+
+- After login, check if `user_type == 'admin'` and show an admin menu (see my previous answer).
+- Implement admin tasks (e.g. generate availability, view reports, deactivate users).
+
+### b. **Log Admin Actions in the Code or SQL**
+
+Whenever you perform an admin action, add code like:
+
+```csharp
+// After performing an admin action
+db.ExecuteNonQuery("insert into admin_logs (admin_id, action, target_table, record_id, details) values (@adminId, @action, @table, @recordId, @details)",
+    new SqlParameter("@adminId", loggedInUserId),
+    new SqlParameter("@action", "Generated seat availability"),
+    new SqlParameter("@table", "seat_availability"),
+    new SqlParameter("@recordId", someId),
+    new SqlParameter("@details", "Generated for train X from date Y to Z"));
+```
+
+Or, add logging statements directly in your admin stored procedures.
+
+### c. **Review Insert_Data.sql**
+
+The only admin log line is commented out:
+```sql
+--insert into admin_logs (admin_id, action, target_table, details)
+--values (1, 'Initial system setup: stations, trains, seat inventory', 'stations,trains,seat_availability', 'Seed data inserted for 5 stations, 20 trains, and seat inventory for next 3 days.');
+```
+You can run this manually to test.
+
+---
+
+## 6. **Summary Table**
+
+| Reason you see no logs | Solution              |
+|------------------------|-----------------------|
+| No admin actions in UI | Add admin menu & features |
+| No logging in code     | Add insert statements after admin ops |
+| Only one proc logs (assign seats, not used) | Add logging to all admin procs |
+
+---
+
+## **Summary**
+
+- `admin_logs` will **only work if you explicitly insert into it** during admin actions.
+- Your current implementation has no admin UI/actions, and logging is not implemented in stored procs (except for `sp_assignseats`, and that’s not used yet).
+- **Action:** Add admin actions and insert logging statements where required in your app or procedures.
+
+---
+
+**Would you like a code sample to add admin logging for a specific admin feature?**

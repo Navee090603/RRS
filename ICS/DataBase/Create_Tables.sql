@@ -134,4 +134,13 @@ create index idx_trains_route on trains(source_station_id, destination_station_i
 create index idx_admin_logs on admin_logs(admin_id, log_time)
 
 
+--changed the constraint type
+
+ALTER TABLE passengers
+DROP CONSTRAINT CK__passenger__statu__59FA5E80;
+
+ALTER TABLE passengers
+ADD CONSTRAINT CK__passenger__status
+    CHECK (status in ('confirmed', 'waitlist', 'rac', 'cancelled'));
+
 

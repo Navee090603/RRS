@@ -267,7 +267,8 @@ namespace ConsoleApp1
 
                 var dt = db.ExecuteTable("sp_setuseractive",
                     new SqlParameter("@userid", userId),
-                    new SqlParameter("@active", active)
+                    new SqlParameter("@active", active),
+                    new SqlParameter("admin_id", loggedInAdminId ?? 1)
                 );
 
                 if (dt.Rows.Count > 0)

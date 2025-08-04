@@ -1063,17 +1063,24 @@ end
 
 --For Activate and Deactivate User
 
-CREATE OR ALTER PROCEDURE sp_setuseractive
-    @userid INT,
-    @active BIT
-AS
-BEGIN
-    SET NOCOUNT ON;
-    UPDATE users
-    SET is_active = @active
-    WHERE user_id = @userid;
+create or alter procedure sp_setuseractive
+@userid int,
+@active bit,
+@admin_id int
+as
+begin
+    set nocount on;
+    
+    update users
+    set is_active = @active
+    where user_id = @userid;
 
-    SELECT user_id, name, email, is_active FROM users WHERE user_id = @userid;
-END
+    insert into admin_logs (admin_id, action, target_table, record_id, details)
+    values (@admin_id, 'set user active/inactive', 'users', @userid, 
+            'set is_active to ' + cast(@active as varchar) + ' for user_id ' + cast(@userid as varchar));
+
+    select user_id, name, email, is_active from users where user_id = @userid;
+end
+
 
 

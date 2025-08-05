@@ -82,6 +82,9 @@ create table passengers (
     foreign key (booking_id) references bookings(booking_id) on delete cascade
 )
 
+ALTER TABLE passengers
+ADD cancellation_reason NVARCHAR(200) NULL
+
 -- 6. seat_availability (daily inventory)
 create table seat_availability (
     availability_id int identity(1,1) primary key,

@@ -44,11 +44,27 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Admin_Features\AdminLogin.cs" />
+    <Compile Include="DataAccess.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Admin_Features\AdminAddTrain.cs" />
+    <Compile Include="Admin_Features\AdminSetUserActive.cs" />
+    <Compile Include="Admin_Features\AdminViewAllBookings.cs" />
+    <Compile Include="Admin_Features\AdminViewAllPayments.cs" />
+    <Compile Include="Admin_Features\AdminViewAllUsers.cs" />
+    <Compile Include="Admin_Features\AdminViewSeatAvailability.cs" />
+    <Compile Include="Admin_Features\AdminViewStations.cs" />
+    <Compile Include="Admin_Features\AdminViewTrains.cs" />
+    <Compile Include="User_Feature\BookTicket.cs" />
+    <Compile Include="User_Feature\CancelBooking.cs" />
+    <Compile Include="User_Feature\LoginUser.cs" />
+    <Compile Include="User_Feature\RegisterUser.cs" />
+    <Compile Include="User_Feature\ViewBookings.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

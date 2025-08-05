@@ -21,7 +21,7 @@ begin
     from inserted
 
     -- generate availability for next 120 days
-    with daterange as (
+    ;with daterange as (
         select cast(getdate() as date) as journey_date
         union all
         select dateadd(day, 1, journey_date)
@@ -39,17 +39,39 @@ create or alter trigger trg_passenger_seat_update
 on passengers after insert
 as
 begin
-    set nocount on
+    set nocount on;
 
+    -- Calculate how many passengers inserted per seat type
     update sa
-    set sleeper_available = case when i.seat_type = 'sleeper' then sa.sleeper_available - 1 else sa.sleeper_available end,
-        ac3_available = case when i.seat_type = 'ac3' then sa.ac3_available - 1 else sa.ac3_available end,
-        ac2_available = case when i.seat_type = 'ac2' then sa.ac2_available - 1 else sa.ac2_available end,
+    set sleeper_available = sa.sleeper_available - (
+            select count(*) from inserted i
+            inner join bookings b on b.booking_id = i.booking_id
+            where i.seat_type = 'sleeper'
+              and b.train_id = sa.train_id
+              and b.journey_date = sa.journey_date
+        ),
+        ac3_available = sa.ac3_available - (
+            select count(*) from inserted i
+            inner join bookings b on b.booking_id = i.booking_id
+            where i.seat_type = 'ac3'
+              and b.train_id = sa.train_id
+              and b.journey_date = sa.journey_date
+        ),
+        ac2_available = sa.ac2_available - (
+            select count(*) from inserted i
+            inner join bookings b on b.booking_id = i.booking_id
+            where i.seat_type = 'ac2'
+              and b.train_id = sa.train_id
+              and b.journey_date = sa.journey_date
+        ),
         last_updated = getdate()
     from seat_availability sa
-    inner join bookings b on sa.train_id = b.train_id
-    inner join inserted i on b.booking_id = i.booking_id
-    where sa.journey_date = b.journey_date
+    where exists (
+        select 1 from inserted i
+        inner join bookings b on b.booking_id = i.booking_id
+        where b.train_id = sa.train_id
+          and b.journey_date = sa.journey_date
+    );
 end
 
 -- c. restore seat availability when booking is cancelled
@@ -57,24 +79,54 @@ create or alter trigger trg_passenger_seat_restore
 on passengers after update
 as
 begin
-    set nocount on
+    set nocount on;
 
-    -- only when status changes to cancelled
+    -- restore seat availability when passenger status changes to cancelled
     if update(status)
     begin
+        -- For each ticket that's cancelled in this update, restore seat count for the correct type
         update sa
-        set sleeper_available = case when i.seat_type = 'sleeper' and i.status = 'cancelled' and d.status != 'cancelled'
-                                     then sa.sleeper_available + 1 else sa.sleeper_available end,
-            ac3_available = case when i.seat_type = 'ac3' and i.status = 'cancelled' and d.status != 'cancelled'
-                                 then sa.ac3_available + 1 else sa.ac3_available end,
-            ac2_available = case when i.seat_type = 'ac2' and i.status = 'cancelled' and d.status != 'cancelled'
-                                 then sa.ac2_available + 1 else sa.ac2_available end,
+        set sleeper_available = sa.sleeper_available + 
+            (select count(*) from inserted i
+                inner join deleted d on i.passenger_id = d.passenger_id
+                inner join bookings b on b.booking_id = i.booking_id
+                where i.seat_type = 'sleeper'
+                  and i.status = 'cancelled'
+                  and d.status != 'cancelled'
+                  and b.train_id = sa.train_id
+                  and b.journey_date = sa.journey_date),
+            ac3_available = sa.ac3_available + 
+            (select count(*) from inserted i
+                inner join deleted d on i.passenger_id = d.passenger_id
+                inner join bookings b on b.booking_id = i.booking_id
+                where i.seat_type = 'ac3'
+                  and i.status = 'cancelled'
+                  and d.status != 'cancelled'
+                  and b.train_id = sa.train_id
+                  and b.journey_date = sa.journey_date),
+            ac2_available = sa.ac2_available + 
+            (select count(*) from inserted i
+                inner join deleted d on i.passenger_id = d.passenger_id
+                inner join bookings b on b.booking_id = i.booking_id
+                where i.seat_type = 'ac2'
+                  and i.status = 'cancelled'
+                  and d.status != 'cancelled'
+                  and b.train_id = sa.train_id
+                  and b.journey_date = sa.journey_date),
             last_updated = getdate()
         from seat_availability sa
-        inner join bookings b on sa.train_id = b.train_id
-        inner join inserted i on b.booking_id = i.booking_id
-        inner join deleted d on i.passenger_id = d.passenger_id
-        where sa.journey_date = b.journey_date
+        where exists (
+            select 1 from inserted i
+            inner join deleted d on i.passenger_id = d.passenger_id
+            inner join bookings b on b.booking_id = i.booking_id
+            where (
+                    (i.seat_type = 'sleeper' and i.status = 'cancelled' and d.status != 'cancelled')
+                 or (i.seat_type = 'ac3' and i.status = 'cancelled' and d.status != 'cancelled')
+                 or (i.seat_type = 'ac2' and i.status = 'cancelled' and d.status != 'cancelled')
+                )
+              and b.train_id = sa.train_id
+              and b.journey_date = sa.journey_date
+        );
     end
 end
 
@@ -382,79 +434,96 @@ begin
 end
 
 -- b. cancel booking
-create or alter procedure sp_cancelbooking
-    @pnrnumber nvarchar(20),
-    @userid int,
-    @cancellationreason nvarchar(200) = null
-as
-begin
-    set nocount on
-    begin transaction
+CREATE OR ALTER PROCEDURE sp_cancelbooking
+    @pnrnumber NVARCHAR(20),
+    @userid INT,
+    @passengername NVARCHAR(100),
+    @cancellationreason NVARCHAR(200) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRANSACTION;
+    BEGIN TRY
+        DECLARE @bookingid INT, @journeydate DATE, @bookingstatus NVARCHAR(20), @currentdate DATE = CAST(GETDATE() AS DATE)
+        DECLARE @passengerid INT, @fare_paid DECIMAL(8,2), @refundamount DECIMAL(10,2), @remaining_passengers INT
 
-    begin try
-        declare @bookingid int, @totalamount decimal(10,2), @refundamount decimal(10,2)
-        declare @journeydate date, @currentdate date = cast(getdate() as date)
-        declare @bookingstatus nvarchar(20)
+        -- Get booking details
+        SELECT @bookingid = booking_id, @journeydate = journey_date, @bookingstatus = booking_status
+        FROM bookings
+        WHERE pnr_number = @pnrnumber
+          AND user_id = @userid
+          AND booking_status IN ('confirmed', 'waitlist', 'rac')
 
-        -- get booking details (allow confirmed or waitlist)
-        select @bookingid = booking_id, @totalamount = total_amount, @journeydate = journey_date, @bookingstatus = booking_status
-        from bookings
-        where pnr_number = @pnrnumber
-          and user_id = @userid
-          and booking_status in ('confirmed', 'waitlist')
+        IF @bookingid IS NULL
+        BEGIN
+            SELECT 0 AS success, 'Booking not found or already cancelled' AS message, 0 AS refundamount
+            ROLLBACK TRANSACTION
+            RETURN
+        END
 
-        if @bookingid is null
-        begin
-            select 0 as success, 'booking not found or already cancelled' as message, 0 as refundamount
-            rollback transaction
-            return
-        end
+        -- Get passenger to cancel
+        SELECT TOP 1 @passengerid = passenger_id, @fare_paid = fare_paid
+        FROM passengers
+        WHERE booking_id = @bookingid
+          AND name = @passengername
+          AND status IN ('confirmed', 'waitlist', 'rac')
 
-        -- calculate refund: for waitlist, charge 10 INR; for confirmed, use existing logic
-        if @bookingstatus = 'waitlist'
-        begin
-            set @refundamount = case when @totalamount > 10 then @totalamount - 10 else 0 end
-        end
-        else
-        begin
-            declare @daystojourney int = datediff(day, @currentdate, @journeydate)
-            set @refundamount = case
-                when @daystojourney >= 1 then @totalamount * 0.9
-                when @daystojourney >= 0 then @totalamount * 0.5
-                else 0
-            end
-        end
+        IF @passengerid IS NULL
+        BEGIN
+            SELECT 0 AS success, 'Passenger not found or already cancelled' AS message, 0 AS refundamount
+            ROLLBACK TRANSACTION
+            RETURN
+        END
 
-        -- update booking status
-        update bookings
-        set booking_status = 'cancelled', payment_status = 'refunded'
-        where booking_id = @bookingid
+        -- Calculate refund for only this passenger
+        DECLARE @daystojourney INT = DATEDIFF(DAY, @currentdate, @journeydate)
+        IF @bookingstatus = 'waitlist'
+            SET @refundamount = CASE WHEN @fare_paid > 10 THEN @fare_paid - 10 ELSE 0 END
+        ELSE
+            SET @refundamount = CASE
+                WHEN @daystojourney >= 1 THEN @fare_paid * 0.9
+                WHEN @daystojourney >= 0 THEN @fare_paid * 0.5
+                ELSE 0
+            END
 
-        -- update passenger status
-        update passengers
-        set status = 'cancelled'
-        where booking_id = @bookingid
+        -- Update passenger status and cancellation reason
+        UPDATE passengers
+        SET status = 'cancelled', cancellation_reason = @cancellationreason
+        WHERE passenger_id = @passengerid
 
-        -- record refund
-        update payments
-        set refund_amount = @refundamount, refund_time = getdate()
-        where booking_id = @bookingid
+        -- Update booking's total_amount and refund in payments
+        UPDATE bookings
+        SET total_amount = total_amount - @fare_paid
+        WHERE booking_id = @bookingid
 
-        commit transaction
+        UPDATE payments
+        SET refund_amount = ISNULL(refund_amount, 0) + @refundamount, refund_time = GETDATE()
+        WHERE booking_id = @bookingid
 
-        select 1 as success, 
-               case when @bookingstatus = 'waitlist' 
-                    then 'waitlist booking cancelled, 10rs fee charged' 
-                    else 'booking cancelled successfully' end as message, 
-               @refundamount as refundamount
+        -- If all passengers cancelled, mark booking as cancelled
+        SELECT @remaining_passengers = COUNT(*) 
+        FROM passengers 
+        WHERE booking_id = @bookingid AND status IN ('confirmed', 'waitlist', 'rac')
 
-    end try
-    begin catch
-        rollback transaction
-        select 0 as success, error_message() as message, 0 as refundamount
-    end catch
-end
+        IF @remaining_passengers = 0
+        BEGIN
+            UPDATE bookings
+            SET booking_status = 'cancelled', payment_status = 'refunded'
+            WHERE booking_id = @bookingid
+        END
 
+        COMMIT TRANSACTION;
+
+        SELECT 1 AS success, 
+               'Passenger cancelled successfully' AS message, 
+               @refundamount AS refundamount
+
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION
+        SELECT 0 AS success, ERROR_MESSAGE() AS message, 0 AS refundamount
+    END CATCH
+END
 -- c. get user bookings
 create or alter procedure sp_getuserbookings
     @userid int,
@@ -728,8 +797,6 @@ as
 begin
     set nocount on
     begin try
-        -- parse seat assignments (simplified for demo)
-        -- in production, use json parsing or table-valued parameters
 
         declare @success bit = 1
 

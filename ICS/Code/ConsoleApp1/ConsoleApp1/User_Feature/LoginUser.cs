@@ -8,8 +8,8 @@ namespace ConsoleApp1.User_Features
 {
     public class LoginUser
     {
-        public static int? LoggedInUserId { get; private set; }
-        public static string LoggedInUserName { get; private set; }
+        public static int? LoggedInUserId { get; set; }
+        public static string LoggedInUserName { get; set; }
 
         public static void loginUser()
         {

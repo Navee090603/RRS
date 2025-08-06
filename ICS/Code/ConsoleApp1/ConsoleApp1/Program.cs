@@ -1,7 +1,7 @@
-﻿using System;
+﻿using ConsoleApp1.Features;
 using ConsoleApp1.User_Features;
 using ConsoleApp1.User_Feature;
-using System.Data.SqlClient;
+using System;
 
 namespace ConsoleApp1
 {
@@ -13,55 +13,106 @@ namespace ConsoleApp1
             {
                 Console.WriteLine("\n=== Railway Reservation System ===");
                 Console.WriteLine("1. Register");
-                Console.WriteLine("2. User Login");
-                Console.WriteLine("3. Admin Login");
-                Console.WriteLine("4. Book Ticket (requires login)");
-                Console.WriteLine("5. View My Bookings (requires login)");
-                Console.WriteLine("6. Cancel Booking (requires login)");
-                Console.WriteLine("7. Exit");
+                Console.WriteLine("2. Login");
+                Console.WriteLine("3. Exit");
                 Console.Write("Select option: ");
                 string opt = Console.ReadLine();
 
-                try
+                if (opt == "1")
                 {
-                    switch (opt)
+                    FeatureFactory.Create("register").Execute();
+                }
+                else if (opt == "2")
+                {
+                    // Ask user type
+                    Console.Write("Are you logging in as User or Admin? (user/admin): ");
+                    string userType = Console.ReadLine().Trim().ToLower();
+
+                    if (userType == "admin")
                     {
-                        case "1":
-                            RegisterUser.registerUser();
-                            break;
-                        case "2":
-                            LoginUser.loginUser();
-                            break;
-                        case "3":
-                            AdminLogin.adminLogin();
-                            break;
-                        case "4":
-                            BookTicket.bookTicket();
-                            break;
-                        case "5":
-                            ViewBookings.viewBookings();
-                            break;
-                        case "6":
-                            CancelBooking.cancelBooking();
-                            break;
-                        case "7":
-                            return;
-                        default:
-                            Console.WriteLine("Invalid option.");
-                            break;
+                        FeatureFactory.Create("adminlogin").Execute();
+                        AdminMenu();
+                    }
+                    else
+                    {
+                        FeatureFactory.Create("login").Execute();
+                        UserMenu();
                     }
                 }
-                catch (SqlException ex)
+                else if (opt == "3")
                 {
-                    Console.WriteLine($"SQL Error: {ex.Message}");
+                    Console.WriteLine("Exiting system...");
+                    break;
                 }
-                catch (FormatException)
+                else
                 {
-                    Console.WriteLine("Invalid input format. Please try again.");
+                    Console.WriteLine("Invalid option.");
                 }
-                catch (Exception ex)
+            }
+        }
+
+        static void UserMenu()
+        {
+            while (LoginUser.LoggedInUserId != null)
+            {
+                Console.WriteLine("\n--- User Menu ---");
+                Console.WriteLine("1. Book Ticket");
+                Console.WriteLine("2. View My Ticket");
+                Console.WriteLine("3. Cancel Ticket");
+                Console.WriteLine("4. View All Stations");
+                Console.WriteLine("5. Logout");
+                Console.Write("Select option: ");
+                string opt = Console.ReadLine();
+
+                switch (opt)
                 {
-                    Console.WriteLine($"General Error: {ex.Message}");
+                    case "1": FeatureFactory.Create("bookticket").Execute(); break;
+                    case "2": FeatureFactory.Create("viewbookings").Execute(); break;
+                    case "3": FeatureFactory.Create("cancelbooking").Execute(); break;
+                    case "4": FeatureFactory.Create("viewstations").Execute(); break;
+                    case "5":
+                        LoginUser.LoggedInUserId = null;
+                        LoginUser.LoggedInUserName = null;
+                        Console.WriteLine("Logged out.");
+                        break;
+                    default: Console.WriteLine("Invalid option."); break;
+                }
+            }
+        }
+
+        static void AdminMenu()
+        {
+            while (AdminLogin.LoggedInAdminId != null)
+            {
+                Console.WriteLine("\n--- Admin Menu ---");
+                Console.WriteLine("1. View All Users");
+                Console.WriteLine("2. Activate/Deactivate User");
+                Console.WriteLine("3. Add Train");
+                Console.WriteLine("4. View All Trains");
+                Console.WriteLine("5. View All Bookings");
+                Console.WriteLine("6. View All Payments");
+                Console.WriteLine("7. View Seat Availability");
+                Console.WriteLine("8. View All Stations");
+                Console.WriteLine("9. Logout");
+                Console.Write("Select option: ");
+                string opt = Console.ReadLine();
+
+                switch (opt)
+                {
+                    case "1": FeatureFactory.Create("viewallusers").Execute(); break;
+                    case "2": FeatureFactory.Create("setuseractive").Execute(); break;
+                    case "3": FeatureFactory.Create("addtrain").Execute(); break;
+                    case "4": FeatureFactory.Create("viewalltrains").Execute(); break;
+                    case "5": FeatureFactory.Create("viewallbookings").Execute(); break;
+                    case "6": FeatureFactory.Create("viewallpayments").Execute(); break;
+                    case "7": FeatureFactory.Create("viewseatavailability").Execute(); break;
+                    case "8": FeatureFactory.Create("viewstations").Execute(); break;
+                    case "9":
+                        AdminLogin.LoggedInAdminId = null;
+                        AdminLogin.LoggedInAdminName = null;
+                        Console.WriteLine("Logged out.");
+                        break;
+                    default: Console.WriteLine("Invalid option."); break;
                 }
             }
         }

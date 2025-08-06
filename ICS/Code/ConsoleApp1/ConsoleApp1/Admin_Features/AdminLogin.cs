@@ -6,11 +6,11 @@ namespace ConsoleApp1.User_Features
 {
     public class AdminLogin
     {
-        public static int? LoggedInAdminId { get; private set; }
-        public static string LoggedInAdminName { get; private set; }
+        public static int? LoggedInAdminId { get; set; }
+        public static string LoggedInAdminName { get; set; }
 
-        private static int? loggedInAdminId = null;
-        private static string loggedInAdminName = null;
+        public static int? loggedInAdminId = null;
+        public static string loggedInAdminName = null;
         public static void adminLogin()
         {
             try

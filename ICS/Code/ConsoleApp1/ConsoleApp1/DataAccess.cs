@@ -25,7 +25,6 @@ namespace ConsoleApp1
             using (SqlConnection conn = new SqlConnection(_connStr))
             using (SqlCommand cmd = new SqlCommand(procOrSql, conn))
             {
-                // Structure: If the query starts with "select", it's text; otherwise, stored procedure
                 if (procOrSql.Trim().ToLower().StartsWith("select"))
                     cmd.CommandType = CommandType.Text;
                 else
@@ -68,7 +67,6 @@ namespace ConsoleApp1
             using (SqlConnection conn = new SqlConnection(_connStr))
             using (SqlCommand cmd = new SqlCommand(procOrSql, conn))
             {
-                // Structure: If it's insert/update/delete, it's text; otherwise, stored procedure
                 var sql = procOrSql.Trim().ToLower();
                 if (sql.StartsWith("insert") || sql.StartsWith("update") || sql.StartsWith("delete"))
                     cmd.CommandType = CommandType.Text;

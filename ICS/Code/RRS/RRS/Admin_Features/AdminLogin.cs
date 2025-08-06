@@ -1,21 +1,22 @@
 ﻿using System;
-using System.Data;
 using System.Data.SqlClient;
-using ConsoleApp1.Features;
-using ConsoleApp1.User_Feature;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace ConsoleApp1.User_Features
+namespace RRS.Admin_Features
 {
-    public class LoginUser
+    public class AdminLogin
     {
-        public static int? LoggedInUserId { get; set; }
-        public static string LoggedInUserName { get; set; }
+        public static int? LoggedInAdminId { get; set; }
+        public static string LoggedInAdminName { get; set; }
 
-        public static void loginUser()
+        public static void adminLogin()
         {
             try
             {
-                Console.Write("Email: ");
+                Console.Write("\n\nAdmin Email: ");
                 string email = Console.ReadLine();
 
                 Console.Write("Password: ");
@@ -32,27 +33,24 @@ namespace ConsoleApp1.User_Features
                     string message = dt.Rows[0]["message"].ToString();
                     string userType = dt.Rows[0]["user_type"].ToString().ToLower();
 
-                    if (success == 1 && userType == "customer")
+                    if (success == 1 && userType == "admin")
                     {
-                        LoggedInUserId = Convert.ToInt32(dt.Rows[0]["user_id"]);
-                        LoggedInUserName = dt.Rows[0]["name"].ToString();
+                        LoggedInAdminId = Convert.ToInt32(dt.Rows[0]["user_id"]);
+                        LoggedInAdminName = dt.Rows[0]["name"].ToString();
 
-                        //loggedInUserId in User_Feature classes
-                        BookTicket.loggedInUserId = LoggedInUserId;
-                        ViewBookings.loggedInUserId = LoggedInUserId;
-                        CancelBooking.loggedInUserId = LoggedInUserId;
-
-                        Console.WriteLine($"Login successful. Welcome, {LoggedInUserName}!");
+                        Console.WriteLine($"Admin login successful. Welcome, {LoggedInAdminName}!");
                     }
-                    else if (success == 1 && userType == "admin")
+                    else if (success == 1 && userType == "customer")
                     {
-                        Console.WriteLine("You are an admin. Please use the Admin Login option.");
+                        Console.WriteLine("You are a customer. Please use the User Login option.");
+                        LoggedInAdminId = null;
+                        LoggedInAdminName = null;
                     }
                     else
                     {
                         Console.WriteLine($"Login failed: {message}");
-                        LoggedInUserId = null;
-                        LoggedInUserName = null;
+                        LoggedInAdminId = null;
+                        LoggedInAdminName = null;
                     }
                 }
                 else

@@ -1,11 +1,12 @@
 ﻿using System;
-using System.Data.SqlClient;
-using ConsoleApp1;
-using System.Data;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
+using System.Data;
+using System.Data.SqlClient;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace ConsoleApp1.User_Features
+namespace RRS.Admin_Features
 {
     public class AdminAddTrain
     {
@@ -136,11 +137,11 @@ namespace ConsoleApp1.User_Features
             }
         }
 
-        // Helper method to get valid station IDs
+        // method to get valid station IDs
         private static List<int> GetValidStationIds()
         {
             var stationIds = new List<int>();
-            var dt = DataAccess.Instance.ExecuteTable("SELECT station_id FROM stations");
+            var dt = DataAccess.Instance.ExecuteTable("select station_id from stations");
             foreach (DataRow row in dt.Rows)
             {
                 stationIds.Add(Convert.ToInt32(row["station_id"]));
@@ -148,10 +149,10 @@ namespace ConsoleApp1.User_Features
             return stationIds;
         }
 
-        // Helper method to get station name by ID
+        // method to get station name by ID
         private static string GetStationNameById(int stationId)
         {
-            var dt = DataAccess.Instance.ExecuteTable("SELECT station_name FROM stations WHERE station_id = @id",
+            var dt = DataAccess.Instance.ExecuteTable("select station_name from stations where station_id = @id",
                 new SqlParameter("@id", stationId));
 
             if (dt.Rows.Count > 0)
@@ -160,7 +161,7 @@ namespace ConsoleApp1.User_Features
                 return "Unknown";
         }
 
-        // Helper method to read integer input
+        // method to read integer input
         private static int ReadInt(string prompt)
         {
             int value;
@@ -173,7 +174,7 @@ namespace ConsoleApp1.User_Features
             return value;
         }
 
-        // Helper method to read decimal input
+        //  method to read decimal input
         private static decimal ReadDecimal(string prompt)
         {
             decimal value;
@@ -185,7 +186,5 @@ namespace ConsoleApp1.User_Features
             }
             return value;
         }
-
-
     }
 }

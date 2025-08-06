@@ -3,13 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using ConsoleApp1.Features;
+using RRS.Admin_Factories; //For Admin_Features
+using RRS.User_Factories; //For User_Features
 
-namespace ConsoleApp1
+
+namespace RRS.Factory
 {
-    public static class FeatureFactory
+    class All_Factory
     {
-        public static IFeature Create(string featureName)
+        public static IConcreate_Factory Create(string featureName)
         {
             switch (featureName.ToLower())
             {

@@ -1,11 +1,13 @@
 ﻿using System;
-using System.Data;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using System.Data.SqlClient;
-using ConsoleApp1;
 
-namespace ConsoleApp1.User_Features
+namespace RRS.Admin_Features
 {
-    public class AdminSetUserActive
+    public class AdminSetUserActive 
     {
         public static void adminSetUserActive(int? loggedInAdminId = null)
         {
@@ -19,7 +21,7 @@ namespace ConsoleApp1.User_Features
                 int userId;
                 while (true)
                 {
-                    Console.WriteLine(); 
+                    Console.WriteLine();
                     Console.Write("Enter User ID: ");
                     string input = Console.ReadLine();
                     if (int.TryParse(input, out userId))
@@ -28,7 +30,7 @@ namespace ConsoleApp1.User_Features
                     Console.WriteLine("Invalid input. Please enter a numeric User ID.");
                 }
 
-              
+
                 Console.WriteLine();
                 Console.Write("Activate? (yes/no): ");
                 string yn = Console.ReadLine().Trim().ToLower();
@@ -67,6 +69,5 @@ namespace ConsoleApp1.User_Features
                 Console.WriteLine($"Error: {ex.Message}");
             }
         }
-
     }
 }

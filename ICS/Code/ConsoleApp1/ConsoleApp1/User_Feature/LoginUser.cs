@@ -65,5 +65,55 @@ namespace ConsoleApp1.User_Features
                 Console.WriteLine($"Error: {ex.Message}");
             }
         }
+
+        public static void UserMenu()
+        {
+            while (LoginUser.LoggedInUserId != null)
+            {
+                Console.Clear();
+                Console.WriteLine("\n--- User Menu ---");
+                Console.WriteLine("1. Book Ticket");
+                Console.WriteLine("2. View My Ticket");
+                Console.WriteLine("3. Cancel Ticket");
+                Console.WriteLine("4. View All Stations");
+                Console.WriteLine("5. Logout");
+                Console.Write("Select option: ");
+                string opt = Console.ReadLine();
+
+                switch (opt)
+                {
+                    case "1": ExecuteFeature("bookticket"); break;
+                    case "2": ExecuteFeature("viewbookings"); break;
+                    case "3": ExecuteFeature("cancelbooking"); break;
+                    case "4": ExecuteFeature("viewstations"); break;
+                    case "5":
+                        LoginUser.LoggedInUserId = null;
+                        LoginUser.LoggedInUserName = null;
+                        Console.WriteLine("Logged out.");
+                        PauseAndClear();
+                        break;
+                    default:
+                        Console.WriteLine("Invalid option.");
+                        PauseAndClear();
+                        break;
+                }
+            }
+        }
+
+        // Helper method for pause and clear
+        static void PauseAndClear()
+        {
+            Console.WriteLine("Press Enter to continue...");
+            Console.ReadLine();
+            Console.Clear();
+        }
+
+        // Helper method to execute features with screen clear
+        static void ExecuteFeature(string featureKey)
+        {
+            Console.Clear();
+            FeatureFactory.Create(featureKey).Execute();
+            PauseAndClear();
+        }
     }
 }

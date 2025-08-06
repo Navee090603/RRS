@@ -9,8 +9,6 @@ namespace ConsoleApp1.User_Features
         public static int? LoggedInAdminId { get; set; }
         public static string LoggedInAdminName { get; set; }
 
-        public static int? loggedInAdminId = null;
-        public static string loggedInAdminName = null;
         public static void adminLogin()
         {
             try
@@ -36,18 +34,20 @@ namespace ConsoleApp1.User_Features
                     {
                         LoggedInAdminId = Convert.ToInt32(dt.Rows[0]["user_id"]);
                         LoggedInAdminName = dt.Rows[0]["name"].ToString();
-                        loggedInAdminId = LoggedInAdminId;
-                        loggedInAdminName = LoggedInAdminName;
+
                         Console.WriteLine($"Admin login successful. Welcome, {LoggedInAdminName}!");
-                        AdminMenu();
+                    }
+                    else if(success == 1 && userType == "customer")
+                    {
+                        Console.WriteLine("You are a customer. Please use the User Login option.");
+                        LoggedInAdminId = null;
+                        LoggedInAdminName = null;
                     }
                     else
                     {
-                        Console.WriteLine("Login failed or not an admin.");
+                        Console.WriteLine($"Login failed: {message}");
                         LoggedInAdminId = null;
                         LoggedInAdminName = null;
-                        loggedInAdminId = null;
-                        loggedInAdminName = null;
                     }
                 }
                 else
@@ -61,11 +61,12 @@ namespace ConsoleApp1.User_Features
             }
         }
 
-        private static void AdminMenu()
+        public static void AdminMenu()
         {
-            while (loggedInAdminId != null)
+            while (AdminLogin.LoggedInAdminId != null)
             {
-                Console.WriteLine("\n=== Admin Menu ===");
+                Console.Clear();
+                Console.WriteLine("\n--- Admin Menu ---");
                 Console.WriteLine("1. View All Users");
                 Console.WriteLine("2. Activate/Deactivate User");
                 Console.WriteLine("3. Add Train");
@@ -77,33 +78,48 @@ namespace ConsoleApp1.User_Features
                 Console.WriteLine("9. Logout");
                 Console.Write("Select option: ");
                 string opt = Console.ReadLine();
-                try
+
+                switch (opt)
                 {
-                    switch (opt)
-                    {
-                        case "1": AdminViewAllUsers.adminViewAllUsers(); break;
-                        case "2": AdminSetUserActive.adminSetUserActive(loggedInAdminId); break;
-                        case "3": AdminAddTrain.adminAddTrain(); break;
-                        case "4": AdminViewTrains.adminViewTrains(); break;
-                        case "5": AdminViewAllBookings.adminViewAllBookings(); break;
-                        case "6": AdminViewAllPayments.adminViewAllPayments(); break;
-                        case "7": AdminViewSeatAvailability.adminViewSeatAvailability(); break;
-                        case "8": AdminViewStations.adminViewStations(); break;
-                        case "9":
-                            loggedInAdminId = null;
-                            loggedInAdminName = null;
-                            Console.WriteLine("Logged out from admin mode.");
-                            break;
-                        default:
-                            Console.WriteLine("Invalid option.");
-                            break;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error: {ex.Message}");
+                    case "1": ExecuteFeature("viewallusers"); break;
+                    case "2": ExecuteFeature("setuseractive"); break;
+                    case "3": ExecuteFeature("addtrain"); break;
+                    case "4": ExecuteFeature("viewalltrains"); break;
+                    case "5": ExecuteFeature("viewallbookings"); break;
+                    case "6": ExecuteFeature("viewallpayments"); break;
+                    case "7": ExecuteFeature("viewseatavailability"); break;
+                    case "8": ExecuteFeature("viewstations"); break;
+                    case "9":
+                        AdminLogin.LoggedInAdminId = null;
+                        AdminLogin.LoggedInAdminName = null;
+                        Console.WriteLine("Logged out.");
+                        PauseAndClear();
+                        break;
+                    default:
+                        Console.WriteLine("Invalid option.");
+                        PauseAndClear();
+                        break;
                 }
             }
         }
+
+        // Helper method for pause and clear
+        public static void PauseAndClear()
+        {
+            Console.WriteLine("Press Enter to continue...");
+            Console.ReadLine();
+            Console.Clear();
+        }
+
+        static void ExecuteFeature(string featureKey)
+        {
+            Console.Clear();
+            FeatureFactory.Create(featureKey).Execute();
+            PauseAndClear();
+        }
     }
 }
+
+
+
+

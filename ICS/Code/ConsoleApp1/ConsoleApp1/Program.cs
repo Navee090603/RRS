@@ -11,7 +11,7 @@ namespace ConsoleApp1
         {
             while (true)
             {
-                Console.Clear(); // Clear the console at the start of each main loop
+                Console.Clear();
                 Console.WriteLine("\n=== Railway Reservation System ===");
                 Console.WriteLine("1. Register");
                 Console.WriteLine("2. Login");
@@ -20,40 +20,58 @@ namespace ConsoleApp1
                 string opt = Console.ReadLine();
 
                 Console.Clear();
+
                 if (opt == "1")
                 {
-                    ExecuteFeature("register");
+                    ConsoleHelper.ExecuteFeature("register");
+                    ConsoleHelper.PauseAndClear();
                 }
                 else if (opt == "2")
                 {
-                    Console.Write("Are you logging in as User or Admin? (user/admin): ");
-                    string userType = Console.ReadLine().Trim().ToLower();
-
-                    bool loginSuccess = false;
-
-                    if (userType == "admin")
+                    while (true)
                     {
-                        ExecuteFeature("adminlogin");
-                        loginSuccess = AdminLogin.LoggedInAdminId != null;
-                        if (loginSuccess)
+                        Console.Write("Are you logging in as User or Admin? (user/admin) or type 'back' to return: ");
+                        string userType = Console.ReadLine().Trim().ToLower();
+
+                        bool loginSuccess = false;
+
+                        if (userType == "admin")
                         {
-                            User_Features.AdminLogin.AdminMenu();
+                            ConsoleHelper.ExecuteFeature("adminlogin");
+                            loginSuccess = AdminLogin.LoggedInAdminId != null;
+                            if (loginSuccess)
+                            {
+                                AdminLogin.AdminMenu();
+                                break;
+                            }
+                            else
+                            {
+                                ConsoleHelper.PauseAndClear(); // already printed failure message
+                            }
                         }
-                    }
-                    else if (userType == "user")
-                    {
-                        ExecuteFeature("login");
-                        loginSuccess = LoginUser.LoggedInUserId != null;
-                        if (loginSuccess)
+                        else if (userType == "user")
                         {
-                            User_Features.LoginUser.UserMenu();
+                            ConsoleHelper.ExecuteFeature("login");
+                            loginSuccess = LoginUser.LoggedInUserId != null;
+                            if (loginSuccess)
+                            {
+                                LoginUser.UserMenu();
+                                break;
+                            }
+                            else
+                            {
+                                ConsoleHelper.PauseAndClear();
+                            }
                         }
-                    }
-
-                    if (!loginSuccess)
-                    {
-                        Console.WriteLine("Login failed.");
-                        PauseAndClear();
+                        else if (userType == "back")
+                        {
+                            break;
+                        }
+                        else
+                        {
+                            Console.WriteLine("Invalid login type. Please enter 'user' or 'admin'.");
+                            ConsoleHelper.PauseAndClear();
+                        }
                     }
                 }
                 else if (opt == "3")
@@ -64,24 +82,9 @@ namespace ConsoleApp1
                 else
                 {
                     Console.WriteLine("Invalid option.");
-                    PauseAndClear();
+                    ConsoleHelper.PauseAndClear();
                 }
             }
-        }
-
-        // Helper method to execute features with screen clear
-        static void ExecuteFeature(string featureKey)
-        {
-            Console.Clear();
-            FeatureFactory.Create(featureKey).Execute();
-            PauseAndClear();
-        }
-
-        public static void PauseAndClear()
-        {
-            Console.WriteLine("Press Enter to continue...");
-            Console.ReadLine();
-            Console.Clear();
         }
     }
 }

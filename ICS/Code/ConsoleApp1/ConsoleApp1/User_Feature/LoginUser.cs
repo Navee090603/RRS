@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Data;
 using System.Data.SqlClient;
-using ConsoleApp1;
+using ConsoleApp1.Features;
 using ConsoleApp1.User_Feature;
 
 namespace ConsoleApp1.User_Features
@@ -82,38 +82,22 @@ namespace ConsoleApp1.User_Features
 
                 switch (opt)
                 {
-                    case "1": ExecuteFeature("bookticket"); break;
-                    case "2": ExecuteFeature("viewbookings"); break;
-                    case "3": ExecuteFeature("cancelbooking"); break;
-                    case "4": ExecuteFeature("viewstations"); break;
+                    case "1": ConsoleHelper.ExecuteFeature("bookticket"); break;
+                    case "2": ConsoleHelper.ExecuteFeature("viewbookings"); break;
+                    case "3": ConsoleHelper.ExecuteFeature("cancelbooking"); break;
+                    case "4": ConsoleHelper.ExecuteFeature("viewstations"); break;
                     case "5":
                         LoginUser.LoggedInUserId = null;
-                        LoginUser.LoggedInUserName = null;
+                        LoggedInUserName = null;
                         Console.WriteLine("Logged out.");
-                        PauseAndClear();
+                        ConsoleHelper.PauseAndClear();
                         break;
                     default:
                         Console.WriteLine("Invalid option.");
-                        PauseAndClear();
+                        ConsoleHelper.PauseAndClear();
                         break;
                 }
             }
-        }
-
-        // Helper method for pause and clear
-        static void PauseAndClear()
-        {
-            Console.WriteLine("Press Enter to continue...");
-            Console.ReadLine();
-            Console.Clear();
-        }
-
-        // Helper method to execute features with screen clear
-        static void ExecuteFeature(string featureKey)
-        {
-            Console.Clear();
-            FeatureFactory.Create(featureKey).Execute();
-            PauseAndClear();
         }
     }
 }

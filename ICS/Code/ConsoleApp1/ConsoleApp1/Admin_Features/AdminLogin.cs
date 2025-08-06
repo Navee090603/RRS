@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Data;
+using ConsoleApp1.Features;
 using System.Data.SqlClient;
 
 namespace ConsoleApp1.User_Features
@@ -63,7 +64,7 @@ namespace ConsoleApp1.User_Features
 
         public static void AdminMenu()
         {
-            while (AdminLogin.LoggedInAdminId != null)
+            while (LoggedInAdminId != null)
             {
                 Console.Clear();
                 Console.WriteLine("\n--- Admin Menu ---");
@@ -81,42 +82,28 @@ namespace ConsoleApp1.User_Features
 
                 switch (opt)
                 {
-                    case "1": ExecuteFeature("viewallusers"); break;
-                    case "2": ExecuteFeature("setuseractive"); break;
-                    case "3": ExecuteFeature("addtrain"); break;
-                    case "4": ExecuteFeature("viewalltrains"); break;
-                    case "5": ExecuteFeature("viewallbookings"); break;
-                    case "6": ExecuteFeature("viewallpayments"); break;
-                    case "7": ExecuteFeature("viewseatavailability"); break;
-                    case "8": ExecuteFeature("viewstations"); break;
+                    case "1": ConsoleHelper.ExecuteFeature("viewallusers"); break;
+                    case "2": ConsoleHelper.ExecuteFeature("setuseractive"); break;
+                    case "3": ConsoleHelper.ExecuteFeature("addtrain"); break;
+                    case "4": ConsoleHelper.ExecuteFeature("viewalltrains"); break;
+                    case "5": ConsoleHelper.ExecuteFeature("viewallbookings"); break;
+                    case "6": ConsoleHelper.ExecuteFeature("viewallpayments"); break;
+                    case "7": ConsoleHelper.ExecuteFeature("viewseatavailability"); break;
+                    case "8": ConsoleHelper.ExecuteFeature("viewstations"); break;
                     case "9":
-                        AdminLogin.LoggedInAdminId = null;
-                        AdminLogin.LoggedInAdminName = null;
+                        LoggedInAdminId = null;
+                        LoggedInAdminName = null;
                         Console.WriteLine("Logged out.");
-                        PauseAndClear();
+                        ConsoleHelper.PauseAndClear();
                         break;
                     default:
                         Console.WriteLine("Invalid option.");
-                        PauseAndClear();
+                        ConsoleHelper.PauseAndClear();
                         break;
                 }
             }
         }
 
-        // Helper method for pause and clear
-        public static void PauseAndClear()
-        {
-            Console.WriteLine("Press Enter to continue...");
-            Console.ReadLine();
-            Console.Clear();
-        }
-
-        static void ExecuteFeature(string featureKey)
-        {
-            Console.Clear();
-            FeatureFactory.Create(featureKey).Execute();
-            PauseAndClear();
-        }
     }
 }
 

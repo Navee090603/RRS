@@ -54,6 +54,7 @@
     <Compile Include="Admin_Factory\AdminViewAllUsersFeature.cs" />
     <Compile Include="Admin_Factory\AdminViewSeatAvailabilityFeature.cs" />
     <Compile Include="Admin_Factory\AdminViewTrainsFeature.cs" />
+    <Compile Include="Features\ConsoleHelper.cs" />
     <Compile Include="User_Factory\BookTicketFeature.cs" />
     <Compile Include="User_Factory\CancelBookingFeature.cs" />
     <Compile Include="Features\FeatureFactory.cs" />

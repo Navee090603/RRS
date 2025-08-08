@@ -1,0 +1,210 @@
+public static void bookTicket()
+{
+    Console.Clear();
+
+    if (loggedInUserId == null)
+    {
+        Console.WriteLine("Please login first to book tickets.");
+        return;
+    }
+
+    try
+    {
+        // Fetch and display stations
+        var stations = DataAccess.Instance.ExecuteTable("sp_getallstations");
+        HashSet<int> stationIds = new HashSet<int>();
+        Console.WriteLine("\nStations:");
+        foreach (DataRow row in stations.Rows)
+        {
+            Console.WriteLine($"{row["station_id"],-5} - {row["station_name"],-30} ({row["station_code"]})");
+            stationIds.Add(Convert.ToInt32(row["station_id"]));
+        }
+
+        // Source & Destination input loop
+        int sourceId, destId;
+        while (true)
+        {
+            sourceId = GetValidatedInt("Source Station ID: ");
+            destId = GetValidatedInt("Destination Station ID: ");
+            if (sourceId == destId)
+            {
+                Console.WriteLine("Source and destination cannot be the same. Please re-enter.");
+                continue;
+            }
+            if (!stationIds.Contains(sourceId) || !stationIds.Contains(destId))
+            {
+                Console.WriteLine("Invalid station(s). Please enter valid station IDs from the above list.");
+                continue;
+            }
+            break;
+        }
+
+        // Journey Date
+        DateTime journeyDate;
+        while (true)
+        {
+            Console.Write("Journey Date (YYYY-MM-DD): ");
+            if (DateTime.TryParse(Console.ReadLine(), out journeyDate))
+                break;
+            Console.WriteLine("Invalid date format. Please enter date as YYYY-MM-DD.");
+        }
+
+        // Seat Type
+        string seatType;
+        while (true)
+        {
+            Console.Write("Seat Type (sleeper/ac3/ac2): ");
+            seatType = (Console.ReadLine() ?? "").Trim().ToLower();
+            if (seatType == "sleeper" || seatType == "ac2" || seatType == "ac3")
+                break;
+            Console.WriteLine("Enter valid seat type (sleeper/ac3/ac2).");
+        }
+
+        // Passenger count
+        int passengerCount;
+        while (true)
+        {
+            passengerCount = GetValidatedInt("Passenger Count: ");
+            if (passengerCount > 0 && passengerCount <= 6)
+                break;
+            Console.WriteLine("Passengers must be between 1 and 6.");
+        }
+
+        // Search trains & table display
+        var trains = DataAccess.Instance.ExecuteTable("sp_searchtrains",
+            new SqlParameter("@sourcestationid", sourceId),
+            new SqlParameter("@destinationstationid", destId),
+            new SqlParameter("@journeydate", journeyDate),
+            new SqlParameter("@seattype", seatType),
+            new SqlParameter("@passengercount", passengerCount)
+        );
+
+        if (trains.Rows.Count == 0)
+        {
+            Console.WriteLine("No trains found for the given criteria.");
+            return;
+        }
+
+        // Table Heading
+        Console.WriteLine("\n{0,-8} | {1,-20} | {2,-8} | {3,-8} | {4,-7} | {5,-12} | {6,-15}",
+            "Train ID", "Train Name", "Dep", "Arr", "Seats", "Fare/Person", "Booking Status");
+        Console.WriteLine(new string('-', 90));
+
+        // Table Rows
+        foreach (DataRow row in trains.Rows)
+        {
+            Console.WriteLine("{0,-8} | {1,-20} | {2,-8} | {3,-8} | {4,-7} | {5,-12} | {6,-15}",
+                row["train_id"], row["train_name"], row["departure_time"], row["arrival_time"],
+                row["available_seats"], row["fare_per_passenger"], row["booking_status"]);
+        }
+
+        // Train selection
+        int trainId;
+        HashSet<int> trainIds = new HashSet<int>();
+        foreach (DataRow row in trains.Rows)
+            trainIds.Add(Convert.ToInt32(row["train_id"]));
+
+        while (true)
+        {
+            trainId = GetValidatedInt("Enter Train ID to book: ");
+            if (trainIds.Contains(trainId))
+                break;
+            Console.WriteLine("Invalid Train ID, please select from the listed trains.");
+        }
+
+        // Passenger details
+        string[] names = new string[passengerCount];
+        string[] ages = new string[passengerCount];
+        string[] genders = new string[passengerCount];
+
+        for (int i = 0; i < passengerCount; i++)
+        {
+            Console.WriteLine($"\nPassenger {i + 1}:");
+            while (true)
+            {
+                Console.Write(" Name: ");
+                names[i] = (Console.ReadLine() ?? "").Trim();
+                if (names[i].Length > 0) break;
+                Console.WriteLine("Name is required.");
+            }
+            while (true)
+            {
+                Console.Write(" Age: ");
+                ages[i] = (Console.ReadLine() ?? "").Trim();
+                if (int.TryParse(ages[i], out int ageVal) && ageVal >= 0 && ageVal < 120)
+                    break;
+                Console.WriteLine("Invalid age.");
+            }
+            while (true)
+            {
+                Console.Write(" Gender (male/female/other): ");
+                genders[i] = (Console.ReadLine() ?? "").Trim().ToLower();
+                if (genders[i] == "male" || genders[i] == "female" || genders[i] == "other")
+                    break;
+                Console.WriteLine("Enter valid gender (male, female, other).");
+            }
+        }
+
+        // Payment method
+        string[] validMethods = { "upi", "netbanking", "creditcard", "debitcard" };
+        string paymentMethod;
+        while (true)
+        {
+            Console.Write("Payment Method (UPI/NetBanking/CreditCard/DebitCard): ");
+            paymentMethod = (Console.ReadLine() ?? "").Trim().ToLower();
+            if (Array.Exists(validMethods, m => m.Equals(paymentMethod)))
+                break;
+            Console.WriteLine("Invalid payment method. Please try again.");
+        }
+
+        string transactionId = Guid.NewGuid().ToString();
+
+        // Prepare output parameters
+        var bookingIdParam = new SqlParameter("@BookingId", SqlDbType.Int) { Direction = ParameterDirection.Output };
+        var pnrParam = new SqlParameter("@PNRNumber", SqlDbType.NVarChar, 20) { Direction = ParameterDirection.Output };
+        var amountParam = new SqlParameter("@TotalAmount", SqlDbType.Decimal) { Direction = ParameterDirection.Output };
+        var statusParam = new SqlParameter("@Status", SqlDbType.NVarChar, 20) { Direction = ParameterDirection.Output };
+
+        // Make booking
+        DataAccess.Instance.ExecuteNonQuery("sp_MakeBooking",
+            new SqlParameter("@UserId", loggedInUserId),
+            new SqlParameter("@TrainId", trainId),
+            new SqlParameter("@JourneyDate", journeyDate),
+            new SqlParameter("@PassengerCount", passengerCount),
+            new SqlParameter("@SeatType", seatType),
+            new SqlParameter("@PaymentMethod", paymentMethod),
+            new SqlParameter("@TransactionId", transactionId),
+            new SqlParameter("@PassengerNames", string.Join(",", names)),
+            new SqlParameter("@PassengerAges", string.Join(",", ages)),
+            new SqlParameter("@PassengerGenders", string.Join(",", genders)),
+            bookingIdParam,
+            pnrParam,
+            amountParam,
+            statusParam
+        );
+
+        Console.WriteLine($"\nBooking Status: {statusParam.Value}\nBooking PNR: {pnrParam.Value}\nAmount: {amountParam.Value}");
+    }
+    catch (SqlException ex)
+    {
+        Console.WriteLine($"SQL Error: {ex.Message}");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error: {ex.Message}");
+    }
+}
+
+// Helper method for integer input with validation
+private static int GetValidatedInt(string prompt)
+{
+    int val;
+    while (true)
+    {
+        Console.Write(prompt);
+        string input = Console.ReadLine();
+        if (int.TryParse(input, out val))
+            return val;
+        Console.WriteLine("Invalid number. Please try again.");
+    }
+}

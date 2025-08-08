@@ -1,18 +1,21 @@
 ﻿using System;
-using System.Data;
 using System.Data.SqlClient;
-using ConsoleApp1.Features;
-using ConsoleApp1.User_Feature;
+using RRS.User_Features; //for Booking,viewBooking,CancelBooking
+using RRS.Login_Factory;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace ConsoleApp1.User_Features
+
+namespace RRS.Login_Features
 {
-    public class LoginUser
+    public class Login
     {
         public static int? LoggedInUserId { get; set; }
         public static string LoggedInUserName { get; set; }
 
-
-        public static void loginUser()
+        public static void login()
         {
             try
             {
@@ -46,8 +49,9 @@ namespace ConsoleApp1.User_Features
                         CancelBooking.loggedInUserId = LoggedInUserId;
 
                         Console.WriteLine($"Login successful. Welcome, {LoggedInUserName}!");
+                        UserMenu.userMenu();
                     }
-                    
+
                     else
                     {
                         LoggedInUserId = null;

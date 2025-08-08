@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Data;
-using ConsoleApp1.Features;
+using ConsoleApp1.Admin_Features;
 using System.Data.SqlClient;
 
 namespace ConsoleApp1.User_Features
@@ -10,6 +10,11 @@ namespace ConsoleApp1.User_Features
         public static int? LoggedInAdminId { get; set; }
         public static string LoggedInAdminName { get; set; }
 
+        public static bool TryLogin()
+        {
+            adminLogin();
+            return LoggedInAdminId != null;
+        }
         public static void adminLogin()
         {
             try
@@ -22,8 +27,7 @@ namespace ConsoleApp1.User_Features
 
                 var dt = DataAccess.Instance.ExecuteTable("sp_loginuser",
                     new SqlParameter("@email", email),
-                    new SqlParameter("@password", password)
-                );
+                    new SqlParameter("@password", password));
 
                 if (dt.Rows.Count > 0)
                 {
@@ -37,6 +41,9 @@ namespace ConsoleApp1.User_Features
                         LoggedInAdminName = dt.Rows[0]["name"].ToString();
 
                         Console.WriteLine($"Admin login successful. Welcome, {LoggedInAdminName}!");
+
+                        AdminMenu.adminMenu();
+                        
                     }
                     else if(success == 1 && userType == "customer")
                     {

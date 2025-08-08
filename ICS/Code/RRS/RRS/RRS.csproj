@@ -32,6 +32,9 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>RRS.Program</StartupObject>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
@@ -45,29 +48,44 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Admin_Factories\AdminAddTrainFeature.cs" />
-    <Compile Include="Admin_Factories\AdminLoginFeature.cs" />
     <Compile Include="Admin_Factories\AdminSetUserActiveFeature.cs" />
     <Compile Include="Admin_Factories\AdminViewAllBookingsFeature.cs" />
+    <Compile Include="Admin_Factories\AdminViewAllPaymentsFeature.cs" />
     <Compile Include="Admin_Factories\AdminViewAllUsersFeature.cs" />
+    <Compile Include="Admin_Factories\AdminViewSeatAvailabilityFeature.cs" />
+    <Compile Include="Admin_Factories\AdminViewTrainsFeature.cs" />
     <Compile Include="Admin_Features\AdminAddTrain.cs" />
-    <Compile Include="Admin_Features\AdminLogin.cs" />
     <Compile Include="Admin_Features\AdminSetUserActive.cs" />
     <Compile Include="Admin_Features\AdminViewAllBookings.cs" />
+    <Compile Include="Admin_Features\AdminViewAllPayments.cs" />
     <Compile Include="Admin_Features\AdminViewAllUsers.cs" />
+    <Compile Include="Admin_Features\AdminViewSeatAvailability.cs" />
     <Compile Include="Admin_Features\AdminViewStations.cs" />
+    <Compile Include="Admin_Features\AdminViewTrains.cs" />
     <Compile Include="DataAccess.cs" />
     <Compile Include="Factory\All_Factory.cs" />
     <Compile Include="Factory\IConcreate_Factory.cs" />
+    <Compile Include="Login_Factory\AdminLoginFeature.cs" />
+    <Compile Include="Login_Factory\Login_Feature.cs" />
+    <Compile Include="Login_Features\AdminLogin.cs" />
+    <Compile Include="Login_Features\AdminMenu.cs" />
+    <Compile Include="Login_Features\Login.cs" />
+    <Compile Include="Login_Features\UserMenu.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="User_Factories\BookTicketFeature.cs" />
+    <Compile Include="User_Factories\CancelBookingFeature.cs" />
+    <Compile Include="User_Factories\RegisterUserFeature.cs" />
+    <Compile Include="User_Factories\ViewBookingsFeature.cs" />
     <Compile Include="User_Factories\ViewStationFeature.cs" />
+    <Compile Include="User_Features\BookTicket.cs" />
+    <Compile Include="User_Features\CancelBooking.cs" />
+    <Compile Include="User_Features\RegisterUser.cs" />
+    <Compile Include="User_Features\ViewBookings.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Menu\" />
-    <Folder Include="User_Features\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

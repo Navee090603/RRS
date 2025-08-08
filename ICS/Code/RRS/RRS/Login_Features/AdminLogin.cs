@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace RRS.Admin_Features
+namespace RRS.Login_Features
 {
     public class AdminLogin
     {
@@ -16,6 +16,9 @@ namespace RRS.Admin_Features
         {
             try
             {
+                Console.Clear();
+                Console.WriteLine("==== Welcome To Railways Admin ====");
+
                 Console.Write("\n\nAdmin Email: ");
                 string email = Console.ReadLine();
 
@@ -39,6 +42,7 @@ namespace RRS.Admin_Features
                         LoggedInAdminName = dt.Rows[0]["name"].ToString();
 
                         Console.WriteLine($"Admin login successful. Welcome, {LoggedInAdminName}!");
+                        AdminMenu.adminMenu(); //For showing the Admin Menu
                     }
                     else if (success == 1 && userType == "customer")
                     {

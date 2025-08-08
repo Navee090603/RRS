@@ -3,19 +3,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using ConsoleApp1.User_Features;
-using ConsoleApp1.Features;
+using RRS.Factory;
+using RRS.Login_Features;
 
-namespace ConsoleApp1.Features
+namespace RRS.Login_Factory
 {
-    public class AdminLoginFeature : IFeature
+    public class Login_Feature : IConcreate_Factory
     {
         public void Execute()
         {
-            AdminLogin.adminLogin(); if (LoginUser.LoggedInUserId == null)
+            Login.login(); if (Login.LoggedInUserId == null)
             {
                 Console.WriteLine("Login failed.");
             }
         }
-}
+    }
 }

@@ -8,7 +8,7 @@ using RRS.Admin_Features; //for the use of AdminStations
 
 namespace RRS.User_Factories
 {
-    class ViewStationFeature : IConcreate_Factory
+    public class ViewStationFeature : IConcreate_Factory
     {
         public void Execute() => AdminViewStations.adminViewStations();
     }

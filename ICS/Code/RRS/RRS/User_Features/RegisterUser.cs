@@ -1,12 +1,11 @@
 ﻿using System;
+using System.Data.SqlClient;
 using System.Collections.Generic;
 using System.Linq;
-using System.Data.SqlClient;
-using ConsoleApp1;
-using System.Data;
+using System.Text;
+using System.Threading.Tasks;
 
-
-namespace ConsoleApp1.User_Feature
+namespace RRS.User_Features
 {
     public class RegisterUser
     {

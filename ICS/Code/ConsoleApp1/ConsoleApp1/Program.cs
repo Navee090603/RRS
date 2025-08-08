@@ -36,16 +36,8 @@ namespace ConsoleApp1
 
                     if (userType == "admin")
                     {
-                        FeatureFactory.Create("adminlogin").Execute();
-                        if (AdminLogin.LoggedInAdminId == null)
-                        {
-                            Console.WriteLine("Login failed or not an admin.");
-                            PauseAndClear();
-                        }
-                        else
-                        {
-                            AdminMenu.adminMenu();
-                        }
+                        FeatureFactory.Create("adminLogin").Execute();
+                        //AdminMenu.adminMenu();
                     }
                     else
                     {

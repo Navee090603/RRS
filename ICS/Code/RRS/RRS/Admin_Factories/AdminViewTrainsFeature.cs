@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using RRS.Factory; // for the AdminViewTrainsFeature
-using RRS.Admin_Features;//for the AdminViewTrains
+using RRS.Factory; // for IConcreate_Factory
+using RRS.Admin_Features;//for AdminViewTrains
 
 namespace RRS.Admin_Factories
 {

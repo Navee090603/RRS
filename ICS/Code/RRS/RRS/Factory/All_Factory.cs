@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using RRS.Admin_Factories; //For Admin_Features
 using RRS.User_Factories; //For User_Features
-
+using RRS.Login_Factory; //For Login_Feature
 
 namespace RRS.Factory
 {
@@ -16,11 +16,11 @@ namespace RRS.Factory
             switch (featureName.ToLower())
             {
                 case "register": return new RegisterUserFeature();//1
-                case "login": return new LoginUserFeature();//2
+                case "login": return new Login_Feature();//2
                 case "bookticket": return new BookTicketFeature();//3
                 case "viewbookings": return new ViewBookingsFeature();//4
                 case "cancelbooking": return new CancelBookingFeature();//5
-                case "viewstations": return new ViewStationsFeature();//6
+                case "viewstations": return new ViewStationFeature();//6
                 case "adminlogin": return new AdminLoginFeature();//7
                 case "viewallusers": return new AdminViewAllUsersFeature();//8
                 case "setuseractive": return new AdminSetUserActiveFeature();//9
@@ -29,6 +29,7 @@ namespace RRS.Factory
                 case "viewallbookings": return new AdminViewAllBookingsFeature();//12
                 case "viewallpayments": return new AdminViewAllPaymentsFeature();//13
                 case "viewseatavailability": return new AdminViewSeatAvailabilityFeature();//14
+                
                 default: throw new System.ArgumentException("Unknown feature");
             }
         }

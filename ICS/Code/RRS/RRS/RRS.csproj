@@ -47,10 +47,12 @@
     <Compile Include="Admin_Factories\AdminAddTrainFeature.cs" />
     <Compile Include="Admin_Factories\AdminLoginFeature.cs" />
     <Compile Include="Admin_Factories\AdminSetUserActiveFeature.cs" />
+    <Compile Include="Admin_Factories\AdminViewAllBookingsFeature.cs" />
     <Compile Include="Admin_Factories\AdminViewAllUsersFeature.cs" />
     <Compile Include="Admin_Features\AdminAddTrain.cs" />
     <Compile Include="Admin_Features\AdminLogin.cs" />
     <Compile Include="Admin_Features\AdminSetUserActive.cs" />
+    <Compile Include="Admin_Features\AdminViewAllBookings.cs" />
     <Compile Include="Admin_Features\AdminViewAllUsers.cs" />
     <Compile Include="Admin_Features\AdminViewStations.cs" />
     <Compile Include="DataAccess.cs" />

@@ -10,6 +10,8 @@ namespace ConsoleApp1
     {
         static void Main(string[] args)
         {
+            Console.OutputEncoding = System.Text.Encoding.UTF8; //For the rupee symbol 
+
             while (true)
             {
                 Console.Clear(); // Clear the console at the start of each main loop

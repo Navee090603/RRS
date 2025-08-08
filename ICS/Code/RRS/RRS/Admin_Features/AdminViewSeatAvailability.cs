@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Data;
 using System.Data.SqlClient;
-using ConsoleApp1;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace ConsoleApp1.User_Features
+namespace RRS.Admin_Features
 {
     public class AdminViewSeatAvailability
     {
@@ -32,7 +35,7 @@ namespace ConsoleApp1.User_Features
                 Console.Write("Invalid Date Format. \nPlease use YYYY-MM-DD : ");
             }
 
-            Console.WriteLine(); 
+            Console.WriteLine();
 
             try
             {
@@ -67,13 +70,12 @@ namespace ConsoleApp1.User_Features
                         $"{row["ac2_available"],-10}");
                 }
 
-                
+
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error: {ex.Message}");
             }
         }
-
     }
 }

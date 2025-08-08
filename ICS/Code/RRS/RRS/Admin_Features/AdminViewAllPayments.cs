@@ -1,7 +1,11 @@
 ﻿using System;
 using System.Data;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace ConsoleApp1.User_Features
+namespace RRS.Admin_Features
 {
     public class AdminViewAllPayments
     {
@@ -50,8 +54,6 @@ namespace ConsoleApp1.User_Features
                 Console.WriteLine($"Error: {ex.Message}");
             }
         }
-
-
 
     }
 }

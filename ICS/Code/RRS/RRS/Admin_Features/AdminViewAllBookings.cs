@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Data;
-using ConsoleApp1;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace ConsoleApp1.User_Features
+namespace RRS.Admin_Features
 {
     public class AdminViewAllBookings
     {
@@ -46,7 +49,6 @@ namespace ConsoleApp1.User_Features
                 Console.WriteLine($"Error: {ex.Message}");
             }
         }
-
 
     }
 }

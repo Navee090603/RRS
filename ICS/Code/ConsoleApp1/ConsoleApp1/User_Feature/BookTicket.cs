@@ -7,9 +7,12 @@ namespace ConsoleApp1.User_Feature
 {
     public class BookTicket
     {
+       
         public static int? loggedInUserId { get; set; }
         public static void bookTicket()
         {
+            Console.Clear();
+
             if (loggedInUserId == null)
             {
                 Console.WriteLine("Please login first to book tickets.");

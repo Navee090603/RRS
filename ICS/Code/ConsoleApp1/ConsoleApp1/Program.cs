@@ -37,6 +37,7 @@ namespace ConsoleApp1
                     if (userType == "admin")
                     {
                         FeatureFactory.Create("adminLogin").Execute();
+
                         //AdminMenu.adminMenu();
                     }
                     else

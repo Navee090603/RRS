@@ -14,89 +14,171 @@ namespace RRS.Admin_Features
         {
             try
             {
-                Console.WriteLine();
+                Console.WriteLine("=== Add New Train ===");
+                Console.WriteLine("Enter 0 at any prompt to cancel.\n");
+
+                // Train Number
                 Console.Write("Train Number: ");
                 string number = Console.ReadLine();
+                if (number == "0")
+                {
+                    Console.WriteLine("Operation cancelled.");
+                    return;
+                }
 
-                Console.WriteLine();
-                Console.Write("Train Name: ");
+                // Train Name
+                Console.Write("\nTrain Name: ");
                 string name = Console.ReadLine();
+                if (name == "0")
+                {
+                    Console.WriteLine("Operation cancelled.");
+                    return;
+                }
 
                 Console.WriteLine();
                 AdminViewStations.adminViewStations();
 
                 List<int> validStationIds = GetValidStationIds();
 
+                // Source Station
                 Console.WriteLine();
-                int src;
-                while (true)
+                Console.Write("Source Station ID: ");
+                string srcInput = Console.ReadLine();
+                if (srcInput == "0")
                 {
-                    Console.Write("Source Station ID: ");
-                    if (int.TryParse(Console.ReadLine(), out src) && validStationIds.Contains(src)) break;
+                    Console.WriteLine("Operation cancelled.");
+                    return;
+                }
+                if (!int.TryParse(srcInput, out int src) || !validStationIds.Contains(src))
+                {
                     Console.WriteLine("Invalid Source Station ID. Please enter a valid ID from the list.");
+                    return;
                 }
 
+                // Destination Station
                 Console.WriteLine();
-                int dst;
-                while (true)
+                Console.Write("Destination Station ID: ");
+                string dstInput = Console.ReadLine();
+                if (dstInput == "0")
                 {
-                    Console.Write("Destination Station ID: ");
-                    if (int.TryParse(Console.ReadLine(), out dst) && validStationIds.Contains(dst)) break;
+                    Console.WriteLine("Operation cancelled.");
+                    return;
+                }
+                if (!int.TryParse(dstInput, out int dst) || !validStationIds.Contains(dst))
+                {
                     Console.WriteLine("Invalid Destination Station ID. Please enter a valid ID from the list.");
+                    return;
                 }
 
+                // Departure Time
                 Console.WriteLine();
-                TimeSpan dep;
-                while (true)
+                Console.Write("Departure Time (HH:mm): ");
+                string depInput = Console.ReadLine();
+                if (depInput == "0")
                 {
-                    Console.Write("Departure Time (HH:mm): ");
-                    if (TimeSpan.TryParse(Console.ReadLine(), out dep)) break;
+                    Console.WriteLine("Operation cancelled.");
+                    return;
+                }
+                if (!TimeSpan.TryParse(depInput, out TimeSpan dep))
+                {
                     Console.WriteLine("Invalid time format. Please enter time as HH:mm.");
+                    return;
                 }
 
+                // Arrival Time
                 Console.WriteLine();
-                TimeSpan arr;
-                while (true)
+                Console.Write("Arrival Time (HH:mm): ");
+                string arrInput = Console.ReadLine();
+                if (arrInput == "0")
                 {
-                    Console.Write("Arrival Time (HH:mm): ");
-                    if (TimeSpan.TryParse(Console.ReadLine(), out arr)) break;
+                    Console.WriteLine("Operation cancelled.");
+                    return;
+                }
+                if (!TimeSpan.TryParse(arrInput, out TimeSpan arr))
+                {
                     Console.WriteLine("Invalid time format. Please enter time as HH:mm.");
+                    return;
                 }
 
+                // Running Days
                 Console.WriteLine();
-                string days;
-                while (true)
+                Console.Write("Running Days (e.g. 1111100 for Mon-Fri): ");
+                string days = Console.ReadLine();
+                if (days == "0")
                 {
-                    Console.Write("Running Days (e.g. 1111100 for Mon-Fri): ");
-                    days = Console.ReadLine();
-                    if (days.Length == 7 && days.All(c => c == '0' || c == '1')) break;
+                    Console.WriteLine("Operation cancelled.");
+                    return;
+                }
+                if (days.Length != 7 || days.Any(c => c != '0' && c != '1'))
+                {
                     Console.WriteLine("Invalid format. Please enter exactly 7 digits using only 0 or 1.");
+                    return;
                 }
 
-                Console.WriteLine();
-                int total = ReadInt("Total Seats");
-
+                // Sleeper Seats
                 Console.WriteLine();
                 int sleeper = ReadInt("Sleeper Seats");
+                if (sleeper == 0)
+                {
+                    Console.WriteLine("Operation cancelled.");
+                    return;
+                }
 
+                // AC3 Seats
                 Console.WriteLine();
                 int ac3 = ReadInt("AC3 Seats");
+                if (ac3 == 0)
+                {
+                    Console.WriteLine("Operation cancelled.");
+                    return;
+                }
 
+                // AC2 Seats
                 Console.WriteLine();
                 int ac2 = ReadInt("AC2 Seats");
+                if (ac2 == 0)
+                {
+                    Console.WriteLine("Operation cancelled.");
+                    return;
+                }
 
+                // Total Seats
+                int total = sleeper + ac3 + ac2;
+                Console.WriteLine($"\nTotal Seats: {total}");
+
+                // Sleeper Fare
                 Console.WriteLine();
                 decimal sleeperFare = ReadDecimal("Sleeper Fare");
+                if (sleeperFare == 0m)
+                {
+                    Console.WriteLine("Operation cancelled.");
+                    return;
+                }
 
+                // AC3 Fare
                 Console.WriteLine();
                 decimal ac3Fare = ReadDecimal("AC3 Fare");
+                if (ac3Fare == 0m)
+                {
+                    Console.WriteLine("Operation cancelled.");
+                    return;
+                }
 
+                // AC2 Fare
                 Console.WriteLine();
                 decimal ac2Fare = ReadDecimal("AC2 Fare");
+                if (ac2Fare == 0m)
+                {
+                    Console.WriteLine("Operation cancelled.");
+                    return;
+                }
 
+                // Insert into database
                 DataAccess.Instance.ExecuteNonQuery(
-                    "insert into trains (train_number, train_name, source_station_id, destination_station_id, departure_time, arrival_time, running_days, total_seats, sleeper_seats, ac3_seats, ac2_seats, sleeper_fare, ac3_fare, ac2_fare) " +
-                    "values (@tnum, @tname, @src, @dst, @dep, @arr, @days, @total, @sleeper, @ac3, @ac2, @sfare, @ac3fare, @ac2fare)",
+                    "INSERT INTO trains (train_number, train_name, source_station_id, destination_station_id, " +
+                    "departure_time, arrival_time, running_days, total_seats, sleeper_seats, ac3_seats, ac2_seats, " +
+                    "sleeper_fare, ac3_fare, ac2_fare) " +
+                    "VALUES (@tnum, @tname, @src, @dst, @dep, @arr, @days, @total, @sleeper, @ac3, @ac2, @sfare, @ac3fare, @ac2fare)",
                     new SqlParameter("@tnum", number),
                     new SqlParameter("@tname", name),
                     new SqlParameter("@src", src),
@@ -117,9 +199,9 @@ namespace RRS.Admin_Features
                 string srcName = GetStationNameById(src);
                 string dstName = GetStationNameById(dst);
 
-                Console.WriteLine("\n Train added successfully.\n");
-                Console.WriteLine("\nAdded Train Details:");
-                Console.WriteLine($"\nTrain Number       : {number}");
+                // Display confirmation
+                Console.WriteLine("\nTrain added successfully.\n");
+                Console.WriteLine($"Train Number       : {number}");
                 Console.WriteLine($"Train Name         : {name}");
                 Console.WriteLine($"Source Station     : {srcName} (ID: {src})");
                 Console.WriteLine($"Destination Station: {dstName} (ID: {dst})");
@@ -137,11 +219,10 @@ namespace RRS.Admin_Features
             }
         }
 
-        // method to get valid station IDs
         private static List<int> GetValidStationIds()
         {
             var stationIds = new List<int>();
-            var dt = DataAccess.Instance.ExecuteTable("select station_id from stations");
+            var dt = DataAccess.Instance.ExecuteTable("SELECT station_id FROM stations");
             foreach (DataRow row in dt.Rows)
             {
                 stationIds.Add(Convert.ToInt32(row["station_id"]));
@@ -149,10 +230,10 @@ namespace RRS.Admin_Features
             return stationIds;
         }
 
-        // method to get station name by ID
         private static string GetStationNameById(int stationId)
         {
-            var dt = DataAccess.Instance.ExecuteTable("select station_name from stations where station_id = @id",
+            var dt = DataAccess.Instance.ExecuteTable(
+                "SELECT station_name FROM stations WHERE station_id = @id",
                 new SqlParameter("@id", stationId));
 
             if (dt.Rows.Count > 0)
@@ -161,30 +242,32 @@ namespace RRS.Admin_Features
                 return "Unknown";
         }
 
-        // method to read integer input
         private static int ReadInt(string prompt)
         {
-            int value;
             while (true)
             {
                 Console.Write($"{prompt}: ");
-                if (int.TryParse(Console.ReadLine(), out value)) break;
+                string input = Console.ReadLine();
+                if (input == "0")
+                    return 0;
+                if (int.TryParse(input, out int value))
+                    return value;
                 Console.WriteLine($"Invalid input. Please enter a valid integer for {prompt}.");
             }
-            return value;
         }
 
-        //  method to read decimal input
         private static decimal ReadDecimal(string prompt)
         {
-            decimal value;
             while (true)
             {
                 Console.Write($"{prompt}: ");
-                if (decimal.TryParse(Console.ReadLine(), out value)) break;
+                string input = Console.ReadLine();
+                if (input == "0")
+                    return 0m;
+                if (decimal.TryParse(input, out decimal value))
+                    return value;
                 Console.WriteLine($"Invalid input. Please enter a valid decimal for {prompt}.");
             }
-            return value;
         }
     }
 }

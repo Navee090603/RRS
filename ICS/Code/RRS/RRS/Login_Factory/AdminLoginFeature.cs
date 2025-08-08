@@ -10,12 +10,12 @@ namespace RRS.Login_Factory
 {
     public class AdminLoginFeature : IConcreate_Factory
     {
-        public void Execute()
-        {
-            AdminLogin.adminLogin(); if (AdminLogin.LoggedInAdminId == null)
-            {
-                Console.WriteLine("Login failed.");
-            }
-        }
+        public void Execute() => AdminLogin.adminLogin();
+        //{
+        //    AdminLogin.adminLogin(); if (AdminLogin.LoggedInAdminId == null)
+        //    {
+        //        Console.WriteLine("Login failed.");
+        //    }
+        //}
     }
 }

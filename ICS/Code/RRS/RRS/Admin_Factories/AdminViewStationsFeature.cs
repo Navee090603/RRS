@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using RRS.Factory; //for teh use of IConcreate_Factory
-using RRS.Admin_Features; //for the use of AdminStations
+using RRS.Factory;//for IConcreate_Factory
+using RRS.Admin_Features;//for AdminViewStations
 
-namespace RRS.User_Factories
+namespace RRS.Admin_Factories
 {
-    public class ViewStationFeature : IConcreate_Factory
+    public class AdminViewStationsFeature : IConcreate_Factory
     {
         public void Execute() => AdminViewStations.adminViewStations();
     }

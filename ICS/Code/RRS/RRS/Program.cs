@@ -1,10 +1,10 @@
 ﻿using System;
+using RRS.Login_Features;
 using RRS.Factory;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
 
 namespace RRS
 {
@@ -27,7 +27,7 @@ namespace RRS
 
                 if (opt == "1")
                 {
-                    Factory.All_Factory.Create("register").Execute();
+                    All_Factory.Create("register").Execute();
                     PauseAndClear();
                 }
                 else if (opt == "2")
@@ -38,12 +38,36 @@ namespace RRS
 
                     if (userType == "admin")
                     {
-                        Factory.All_Factory.Create("adminLogin").Execute();
+                        All_Factory.Create("adminlogin").Execute();
 
+                        if (AdminLogin.LoggedInAdminId == null)
+                        {
+                            Console.WriteLine("Login failed or not an admin.");
+                            PauseAndClear();
+                        }
+                        else
+                        {
+                            All_Factory.Create("adminmenu").Execute();
+                        }
+                    }
+                    else if (userType == "user")
+                    {
+                        All_Factory.Create("login").Execute();
+
+                        if (Login.LoggedInUserId == null)
+                        {
+                            Console.WriteLine("Login failed.");
+                            PauseAndClear();
+                        }
+                        else
+                        {
+                            All_Factory.Create("usermenu").Execute();
+                        }
                     }
                     else
                     {
-                        Factory.All_Factory.Create("login").Execute();
+                        Console.WriteLine("Enter user or Admin...");
+                        PauseAndClear();
                     }
                 }
                 else if (opt == "3")

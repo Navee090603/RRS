@@ -20,7 +20,7 @@ namespace RRS.Factory
                 case "bookticket": return new BookTicketFeature();//3
                 case "viewbookings": return new ViewBookingsFeature();//4
                 case "cancelbooking": return new CancelBookingFeature();//5
-                case "viewstations": return new ViewStationFeature();//6
+                case "viewstations": return new AdminViewStationsFeature();//6
                 case "adminlogin": return new AdminLoginFeature();//7
                 case "viewallusers": return new AdminViewAllUsersFeature();//8
                 case "setuseractive": return new AdminSetUserActiveFeature();//9
@@ -29,7 +29,9 @@ namespace RRS.Factory
                 case "viewallbookings": return new AdminViewAllBookingsFeature();//12
                 case "viewallpayments": return new AdminViewAllPaymentsFeature();//13
                 case "viewseatavailability": return new AdminViewSeatAvailabilityFeature();//14
-                
+                case "usermenu": return new UserMenuFeature();//15
+                case "adminmenu": return new AdminMenuFeature();//16
+
                 default: throw new System.ArgumentException("Unknown feature");
             }
         }

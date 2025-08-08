@@ -46,6 +46,7 @@ namespace ConsoleApp1.User_Features
                         CancelBooking.loggedInUserId = LoggedInUserId;
 
                         Console.WriteLine($"Login successful. Welcome, {LoggedInUserName}!");
+                        UserMenu.userMenu();
                     }
                     
                     else

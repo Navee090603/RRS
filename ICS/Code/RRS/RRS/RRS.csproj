@@ -53,6 +53,7 @@
     <Compile Include="Admin_Factories\AdminViewAllPaymentsFeature.cs" />
     <Compile Include="Admin_Factories\AdminViewAllUsersFeature.cs" />
     <Compile Include="Admin_Factories\AdminViewSeatAvailabilityFeature.cs" />
+    <Compile Include="Admin_Factories\AdminViewStationsFeature.cs" />
     <Compile Include="Admin_Factories\AdminViewTrainsFeature.cs" />
     <Compile Include="Admin_Features\AdminAddTrain.cs" />
     <Compile Include="Admin_Features\AdminSetUserActive.cs" />
@@ -66,7 +67,9 @@
     <Compile Include="Factory\All_Factory.cs" />
     <Compile Include="Factory\IConcreate_Factory.cs" />
     <Compile Include="Login_Factory\AdminLoginFeature.cs" />
+    <Compile Include="Login_Factory\AdminMenuFeature.cs" />
     <Compile Include="Login_Factory\Login_Feature.cs" />
+    <Compile Include="Login_Factory\UserMenuFeature.cs" />
     <Compile Include="Login_Features\AdminLogin.cs" />
     <Compile Include="Login_Features\AdminMenu.cs" />
     <Compile Include="Login_Features\Login.cs" />
@@ -77,7 +80,6 @@
     <Compile Include="User_Factories\CancelBookingFeature.cs" />
     <Compile Include="User_Factories\RegisterUserFeature.cs" />
     <Compile Include="User_Factories\ViewBookingsFeature.cs" />
-    <Compile Include="User_Factories\ViewStationFeature.cs" />
     <Compile Include="User_Features\BookTicket.cs" />
     <Compile Include="User_Features\CancelBooking.cs" />
     <Compile Include="User_Features\RegisterUser.cs" />

@@ -1,11 +1,4 @@
--- =====================================================
--- railway reservation system - ado.net ready procedures
--- all inputs dynamic, no hardcoded values, production ready
--- =====================================================
-
--- =====================================================
 -- 1. triggers (auto-executed on data changes)
--- =====================================================
 
 -- a. auto-generate seat availability when train is added
 create or alter trigger trg_train_insert_availability
@@ -35,6 +28,7 @@ begin
 end
 
 -- b. update seat availability when booking is made
+
 create or alter trigger trg_passenger_seat_update
 on passengers after insert
 as
@@ -71,10 +65,11 @@ begin
         inner join bookings b on b.booking_id = i.booking_id
         where b.train_id = sa.train_id
           and b.journey_date = sa.journey_date
-    );
+    )
 end
 
 -- c. restore seat availability when booking is cancelled
+
 create or alter trigger trg_passenger_seat_restore
 on passengers after update
 as
@@ -126,13 +121,13 @@ begin
                 )
               and b.train_id = sa.train_id
               and b.journey_date = sa.journey_date
-        );
+        )
     end
 end
 
 -- =====================================================
 -- 2. user authentication & management
--- =====================================================
+
 
 -- a. user registration
 create or alter procedure sp_registeruser
@@ -203,7 +198,7 @@ end
 
 -- =====================================================
 -- 3. station management
--- =====================================================
+
 
 -- a. get all active stations
 create or alter procedure sp_getallstations
@@ -217,26 +212,11 @@ begin
     order by station_name
 end
 
--- b. search stations by name/code
-create or alter procedure sp_searchstations
-    @searchterm nvarchar(100)
-as
-begin
-    set nocount on
-
-    select station_id, station_name, station_code, state
-    from stations
-    where is_active = 1
-      and (station_name like '%' + @searchterm + '%'
-           or station_code like '%' + @searchterm + '%')
-    order by station_name
-end
-
 -- =====================================================
 -- 4. train search & availability
--- =====================================================
 
--- a. search available trains (ado.net ready)
+
+-- a. search available trains (ado.net ready) --> Useful while booking
 create or alter procedure sp_searchtrains
     @sourcestationid int,
     @destinationstationid int,
@@ -293,7 +273,7 @@ begin
       and s2.is_active = 1
       and len(t.running_days) >= @dayofweek
       and substring(t.running_days, @dayofweek, 1) = '1'
-	  and @journeydate <= '2025-12-01' --for my reference cause train seat availability maded upto only 2025-12-01 
+	  and @journeydate <= '2025-12-05' --for my reference cause train seat availability maded upto only 2025-12-01 
     order by t.departure_time
 end
 
@@ -326,7 +306,7 @@ end
 
 -- =====================================================
 -- 5. booking operations
--- =====================================================
+
 
 -- a. make booking (complete ado.net ready)
 create or alter procedure sp_makebooking
@@ -443,6 +423,7 @@ begin
                null as pnr, 0 as amount, 'failed' as bookingstatus
     end catch
 end
+go
 
 
 -- b. cancel booking
@@ -692,35 +673,6 @@ begin
     return isnull(@totalfare, 0)
 end
 
----- c. validate journey date
---create or alter function fn_isvalidjourneydate(
---    @trainid int,
---    @journeydate date
---)
---returns bit
---as
---begin
---    declare @isvalid bit = 0
---    declare @dayofweek int = datepart(weekday, @journeydate)
---    declare @runningdays nvarchar(7)
---    declare @currentdate date = cast(getdate() as date)
-
---    -- check if journey date is not in past
---    if @journeydate < @currentdate
---        return 0
-
---    select @runningdays = running_days
---    from trains
---    where train_id = @trainid and is_active = 1
-
---    if @runningdays is not null and len(@runningdays) >= @dayofweek
---    begin
---        set @isvalid = case when substring(@runningdays, @dayofweek, 1) = '1' then 1 else 0 end
---    end
-
---    return @isvalid
---end
-
 -- =====================================================
 -- 7. admin procedures
 -- =====================================================
@@ -775,7 +727,7 @@ begin
         select @sleeper = sleeper_seats, @ac3 = ac3_seats, @ac2 = ac2_seats
         from trains where train_id = @trainid
 
-        with daterange as (
+        ;with daterange as (
             select @fromdate as journey_date
             union all
             select dateadd(day, 1, journey_date)
@@ -798,255 +750,11 @@ begin
     end catch
 end
 
--- =====================================================
--- 8. additional business logic procedures
--- =====================================================
 
--- a. update passenger seat assignment
-create or alter procedure sp_assignseats
-    @bookingid int,
-    @seatassignments nvarchar(max)
-as
-begin
-    set nocount on
-    begin try
 
-        declare @success bit = 1
-
-        -- validate booking exists and is confirmed
-        if not exists(select 1 from bookings where booking_id = @bookingid and booking_status = 'confirmed')
-        begin
-            select 0 as success, 'invalid booking or booking not confirmed' as message
-            return
-        end
-
-        -- log the seat assignment activity
-        insert into admin_logs (admin_id, action, target_table, record_id, details)
-        values (1, 'seat assignment', 'passengers', @bookingid, 'seats assigned for booking: ' + cast(@bookingid as nvarchar))
-
-        select 1 as success, 'seat assignments updated successfully' as message
-
-    end try
-    begin catch
-        select 0 as success, error_message() as message
-    end catch
-end
-
--- b. get train occupancy report
-create or alter procedure sp_gettrainoccupancy
-    @trainid int,
-    @fromdate date,
-    @todate date
-as
-begin
-    set nocount on
-
-    select
-        b.journey_date,
-        t.train_number,
-        t.train_name,
-        t.total_seats,
-        sum(case when p.seat_type = 'sleeper' then 1 else 0 end) as sleeper_booked,
-        t.sleeper_seats - sum(case when p.seat_type = 'sleeper' then 1 else 0 end) as sleeper_available,
-        sum(case when p.seat_type = 'ac3' then 1 else 0 end) as ac3_booked,
-        t.ac3_seats - sum(case when p.seat_type = 'ac3' then 1 else 0 end) as ac3_available,
-        sum(case when p.seat_type = 'ac2' then 1 else 0 end) as ac2_booked,
-        t.ac2_seats - sum(case when p.seat_type = 'ac2' then 1 else 0 end) as ac2_available,
-        count(p.passenger_id) as total_passengers,
-        sum(b.total_amount) as total_revenue,
-        cast((count(p.passenger_id) * 100.0 / t.total_seats) as decimal(5,2)) as occupancy_percentage
-    from trains t
-    left join bookings b on t.train_id = b.train_id
-        and b.journey_date between @fromdate and @todate
-        and b.booking_status = 'confirmed'
-    left join passengers p on b.booking_id = p.booking_id and p.status = 'confirmed'
-    where t.train_id = @trainid
-    group by b.journey_date, t.train_number, t.train_name, t.total_seats, t.sleeper_seats, t.ac3_seats, t.ac2_seats
-    order by b.journey_date
-end
-
--- c. process waitlist bookings
-create or alter procedure sp_processwaitlist
-    @trainid int,
-    @journeydate date
-as
-begin
-    set nocount on
-    begin transaction
-
-    begin try
-        declare @processedcount int = 0
-
-        -- get available seats
-        declare @sleeperavailable int, @ac3available int, @ac2available int
-
-        select @sleeperavailable = sleeper_available,
-               @ac3available = ac3_available,
-               @ac2available = ac2_available
-        from seat_availability
-        where train_id = @trainid and journey_date = @journeydate
-
-        -- process sleeper waitlist
-        if @sleeperavailable > 0
-        begin
-            update top(@sleeperavailable) p
-            set status = 'confirmed'
-            from passengers p
-            inner join bookings b on p.booking_id = b.booking_id
-            where b.train_id = @trainid
-              and b.journey_date = @journeydate
-              and p.seat_type = 'sleeper'
-              and p.status = 'waitlist'
-              and b.booking_status = 'waitlist'
-
-            set @processedcount += @@rowcount
-        end
-
-        -- update booking status for confirmed passengers
-        update b
-        set booking_status = 'confirmed'
-        from bookings b
-        where b.train_id = @trainid
-          and b.journey_date = @journeydate
-          and b.booking_status = 'waitlist'
-          and exists (
-              select 1 from passengers p
-              where p.booking_id = b.booking_id and p.status = 'confirmed'
-          )
-
-        commit transaction
-
-        select 1 as success, @processedcount as processedpassengers
-
-    end try
-    begin catch
-        rollback transaction
-        select 0 as success, error_message() as message
-    end catch
-end
-
--- d. get revenue report
-create or alter procedure sp_getrevenuereport
-    @fromdate date,
-    @todate date,
-    @trainid int = null,
-    @groupby nvarchar(10) = 'daily'
-as
-begin
-    set nocount on
-
-    if @groupby = 'daily'
-    begin
-        select
-            b.journey_date,
-            count(distinct b.booking_id) as total_bookings,
-            sum(b.passenger_count) as total_passengers,
-            sum(b.total_amount) as total_revenue,
-            sum(case when b.booking_status = 'cancelled' then p.refund_amount else 0 end) as total_refunds,
-            sum(b.total_amount) - sum(case when b.booking_status = 'cancelled' then p.refund_amount else 0 end) as net_revenue
-        from bookings b
-        left join payments p on b.booking_id = p.booking_id
-        where b.journey_date between @fromdate and @todate
-          and (@trainid is null or b.train_id = @trainid)
-        group by b.journey_date
-        order by b.journey_date
-    end
-    else if @groupby = 'train'
-    begin
-        select
-            t.train_number,
-            t.train_name,
-            count(distinct b.booking_id) as total_bookings,
-            sum(b.passenger_count) as total_passengers,
-            sum(b.total_amount) as total_revenue,
-            avg(b.total_amount) as avg_booking_value
-        from bookings b
-        inner join trains t on b.train_id = t.train_id
-        where b.journey_date between @fromdate and @todate
-          and (@trainid is null or b.train_id = @trainid)
-        group by t.train_id, t.train_number, t.train_name
-        order by total_revenue desc
-    end
-end
 
 -- =====================================================
--- 9. notification & communication procedures
--- =====================================================
-
--- a. get booking notifications
-create or alter procedure sp_getbookingnotifications
-    @userid int,
-    @notificationtype nvarchar(20) = null
-as
-begin
-    set nocount on
-
-    -- return booking-related notifications
-    select
-        'booking_confirmation' as notification_type,
-        b.pnr_number,
-        'your booking ' + b.pnr_number + ' for ' + t.train_name + ' on ' +
-        convert(nvarchar, b.journey_date, 106) + ' is confirmed' as message,
-        b.booking_time as created_at,
-        case when datediff(hour, b.booking_time, getdate()) <= 24 then 1 else 0 end as is_new
-    from bookings b
-    inner join trains t on b.train_id = t.train_id
-    where b.user_id = @userid
-      and b.booking_status = 'confirmed'
-      and (@notificationtype is null or @notificationtype = 'booking')
-
-    union all
-
-    select
-        'waitlist_notification' as notification_type,
-        b.pnr_number,
-        'your booking ' + b.pnr_number + ' is in waitlist. we will notify you if seats become available' as message,
-        b.booking_time as created_at,
-        case when datediff(hour, b.booking_time, getdate()) <= 24 then 1 else 0 end as is_new
-    from bookings b
-    where b.user_id = @userid
-      and b.booking_status = 'waitlist'
-      and (@notificationtype is null or @notificationtype = 'waitlist')
-
-    order by created_at desc
-end
-
--- b. get journey reminders
-create or alter procedure sp_getjourneyreminders
-    @reminderdate date = null
-as
-begin
-    set nocount on
-
-    set @reminderdate = isnull(@reminderdate, cast(getdate() as date))
-
-    select
-        u.user_id,
-        u.name,
-        u.email,
-        u.phone,
-        b.pnr_number,
-        t.train_number,
-        t.train_name,
-        s1.station_name as source_station,
-        s2.station_name as destination_station,
-        t.departure_time,
-        b.journey_date,
-        'your train ' + t.train_name + ' (' + t.train_number + ') departs today at ' +
-        convert(nvarchar, t.departure_time, 108) + ' from ' + s1.station_name as reminder_message
-    from bookings b
-    inner join users u on b.user_id = u.user_id
-    inner join trains t on b.train_id = t.train_id
-    inner join stations s1 on t.source_station_id = s1.station_id
-    inner join stations s2 on t.destination_station_id = s2.station_id
-    where b.journey_date = @reminderdate
-      and b.booking_status = 'confirmed'
-      and u.is_active = 1
-    order by t.departure_time
-end
-
--- =====================================================
--- 10. data validation & business rules
+-- 9. data validation & business rules
 -- =====================================================
 
 -- a. validate booking request
@@ -1141,7 +849,7 @@ begin
     end
 end
 
---For Activate and Deactivate User
+c.--For Activate and Deactivate User
 
 create or alter procedure sp_setuseractive
 @userid int,
@@ -1161,6 +869,12 @@ begin
 
     select user_id, name, email, is_active from users where user_id = @userid;
 end
+
+
+
+
+
+
 
 
 

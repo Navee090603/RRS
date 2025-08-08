@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using RRS.Factory;
-using RRS.User_Features;
+using RRS.Factory; //for IConcreate_Factory
+using RRS.User_Features; //for RegisterUser
 
 namespace RRS.User_Factories
 {

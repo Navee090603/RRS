@@ -24,7 +24,7 @@ namespace RRS.Login_Features
                 Console.Write("\nEmail: ");
                 string email = Console.ReadLine();
 
-                Console.Write("\nPassword: ");
+                Console.Write("Password: ");
                 string password = Console.ReadLine();
 
                 var dt = DataAccess.Instance.ExecuteTable("sp_loginuser",
@@ -52,16 +52,19 @@ namespace RRS.Login_Features
                         UserMenu.userMenu();
                     }
 
-                    else
-                    {
-                        LoggedInUserId = null;
-                        LoggedInUserName = null;
-                    }
+                    //else
+                    //{
+                    //    Console.WriteLine("\n❌ Login failed: Invalid email or password.");
+                    //    LoggedInUserId = null;
+                    //    LoggedInUserName = null;
+                    //}
                 }
                 else
                 {
                     Console.Clear();
                     Console.WriteLine("Please check your credentials.");
+                    LoggedInUserId = null;
+                    LoggedInUserName = null;
                 }
             }
             catch (Exception ex)

@@ -128,7 +128,7 @@ namespace ConsoleApp1.User_Feature
 
                     if (trains.Rows.Count == 0)
                     {
-                        Console.WriteLine("\nNo trains found. Booking is allowed only for dates up to '2025-12-01'.");
+                        Console.WriteLine("\nNo trains found. Booking is allowed only for dates up to '2025-12-05'.");
                         Console.WriteLine("\nPlease re-enter a valid journey date or type 'exit' to cancel.\n");
                         continue;
                     }

@@ -82,10 +82,12 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="User_Factories\BookTicketFeature.cs" />
     <Compile Include="User_Factories\CancelBookingFeature.cs" />
+    <Compile Include="User_Factories\DownloadTicketFeature.cs" />
     <Compile Include="User_Factories\RegisterUserFeature.cs" />
     <Compile Include="User_Factories\ViewBookingsFeature.cs" />
     <Compile Include="User_Features\BookTicket.cs" />
     <Compile Include="User_Features\CancelBooking.cs" />
+    <Compile Include="User_Features\DownloadTicket.cs" />
     <Compile Include="User_Features\RegisterUser.cs" />
     <Compile Include="User_Features\ViewBookings.cs" />
   </ItemGroup>

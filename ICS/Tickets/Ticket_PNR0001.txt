@@ -1,0 +1,16 @@
+=== Railway Reservation Ticket ===
+PNR Number     : PNR0001
+Passenger Name : Karunya
+Train          : Coimbatore–Chennai Express (CBE-MAS-001)
+Journey Date   : 2025-12-01
+Booking Time   : 2025-08-09 10:05
+Status         : confirmed
+Total Amount   : ₹700.00
+
+Passengers:
+-------------------------------------------------------------
+Name            Age  Gender Type     Coach  Seat   Fare     Status    
+-------------------------------------------------------------
+Naveen          22   male   ac3                    ₹700.00  confirmed 
+Karunya         22   female ac3                    ₹700.00  cancelled 
+-------------------------------------------------------------

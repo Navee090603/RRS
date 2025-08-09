@@ -1,0 +1,87 @@
+CREATE OR ALTER PROCEDURE sp_searchtrains
+    @sourcestationid INT,
+    @destinationstationid INT,
+    @journeydate DATE,
+    @seattype NVARCHAR(10) = 'sleeper',
+    @passengercount INT = 1
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @dayofweek INT = DATEPART(weekday, @journeydate);
+
+    IF NOT EXISTS (
+        SELECT 1
+        FROM trains t
+        WHERE t.source_station_id = @sourcestationid
+          AND t.destination_station_id = @destinationstationid
+          AND t.is_active = 1
+          AND LEN(t.running_days) >= @dayofweek
+          AND SUBSTRING(t.running_days, @dayofweek, 1) = '1'
+    )
+    BEGIN
+        SELECT 
+            'No Running Trains Today' AS message,
+            NULL AS train_id,
+            NULL AS train_number,
+            NULL AS train_name,
+            NULL AS source_station,
+            NULL AS source_code,
+            NULL AS destination_station,
+            NULL AS destination_code,
+            NULL AS departure_time,
+            NULL AS arrival_time,
+            NULL AS available_seats,
+            NULL AS fare_per_passenger,
+            NULL AS total_fare,
+            NULL AS booking_status;
+        RETURN;
+    END
+
+    SELECT
+        t.train_id,
+        t.train_number,
+        t.train_name,
+        s1.station_name AS source_station,
+        s1.station_code AS source_code,
+        s2.station_name AS destination_station,
+        s2.station_code AS destination_code,
+        t.departure_time,
+        t.arrival_time,
+        CASE @seattype
+            WHEN 'sleeper' THEN ISNULL(sa.sleeper_available, 0)
+            WHEN 'ac3' THEN ISNULL(sa.ac3_available, 0)
+            WHEN 'ac2' THEN ISNULL(sa.ac2_available, 0)
+        END AS available_seats,
+        CASE @seattype
+            WHEN 'sleeper' THEN t.sleeper_fare
+            WHEN 'ac3' THEN t.ac3_fare
+            WHEN 'ac2' THEN t.ac2_fare
+        END AS fare_per_passenger,
+        (CASE @seattype
+            WHEN 'sleeper' THEN t.sleeper_fare
+            WHEN 'ac3' THEN t.ac3_fare
+            WHEN 'ac2' THEN t.ac2_fare
+        END * @passengercount) AS total_fare,
+        CASE
+            WHEN CASE @seattype
+                WHEN 'sleeper' THEN ISNULL(sa.sleeper_available, 0)
+                WHEN 'ac3' THEN ISNULL(sa.ac3_available, 0)
+                WHEN 'ac2' THEN ISNULL(sa.ac2_available, 0)
+            END >= @passengercount THEN 'available'
+            ELSE 'waitlist'
+        END AS booking_status
+    FROM trains t
+    INNER JOIN stations s1 ON t.source_station_id = s1.station_id
+    INNER JOIN stations s2 ON t.destination_station_id = s2.station_id
+    LEFT JOIN seat_availability sa ON t.train_id = sa.train_id AND sa.journey_date = @journeydate
+    WHERE t.source_station_id = @sourcestationid
+      AND t.destination_station_id = @destinationstationid
+      AND t.is_active = 1
+      AND s1.is_active = 1
+      AND s2.is_active = 1
+      AND LEN(t.running_days) >= @dayofweek
+      AND SUBSTRING(t.running_days, @dayofweek, 1) = '1'
+      AND @journeydate <= '2025-12-05'
+    ORDER BY t.departure_time;
+END

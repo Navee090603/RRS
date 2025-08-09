@@ -16,8 +16,9 @@ namespace RRS.Login_Features
                 Console.WriteLine("\n--- User Menu ---");
                 Console.WriteLine("\n1. Book Ticket");
                 Console.WriteLine("2. View My Bookings");
-                Console.WriteLine("3. Cancel Ticket");
-                Console.WriteLine("4. Logout");
+                Console.WriteLine("3. Download My Ticket");
+                Console.WriteLine("4. Cancel Ticket");
+                Console.WriteLine("5. Logout");
                 Console.Write("\nSelect option: ");
                 string opt = Console.ReadLine();
 
@@ -32,10 +33,14 @@ namespace RRS.Login_Features
                         PauseAndClear();
                         break;
                     case "3":
-                        Factory.All_Factory.Create("cancelbooking").Execute();
+                        Factory.All_Factory.Create("downloadticket").Execute();
                         PauseAndClear();
                         break;
                     case "4":
+                        Factory.All_Factory.Create("cancelbooking").Execute();
+                        PauseAndClear();
+                        break;
+                    case "5":
                         Login.LoggedInUserId = null;
                         Login.LoggedInUserName = null;
                         Console.WriteLine("Logged out.");

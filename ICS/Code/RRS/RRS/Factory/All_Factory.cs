@@ -33,6 +33,7 @@ namespace RRS.Factory
                 case "adminmenu": return new AdminMenuFeature();//16
                 case "viewreport": return new AdminRevenueReportFeature();//17
                 case "viewpassengers": return new AdminViewPassengersFeature();//18
+                case "downloadticket": return new DownloadTicketFeature();//19
 
                 default: throw new System.ArgumentException("Unknown feature");
             }

@@ -179,6 +179,20 @@ namespace ConsoleApp1.User_Feature
                     Console.WriteLine("Invalid Train ID. Please select from the listed trains or enter 0 to cancel.\n");
                 }
 
+                // --- Journey date validation function call ---
+                var dtValid = DataAccess.Instance.ExecuteTable(
+                    "SELECT dbo.fn_isvalidjourneydate(@trainid, @journeydate) AS isvalid",
+                    new SqlParameter("@trainid", trainId),
+                    new SqlParameter("@journeydate", journeyDate)
+                );
+                bool isValid = dtValid.Rows.Count > 0 && Convert.ToInt32(dtValid.Rows[0]["isvalid"]) == 1;
+                if (!isValid)
+                {
+                    Console.WriteLine("Selected journey date is invalid for the chosen train. Please check the running days and try again.");
+                    return;
+                }
+                // --- End journey date validation ---
+
                 // 8. Passenger details
                 string[] names = new string[passengerCount];
                 string[] ages = new string[passengerCount];

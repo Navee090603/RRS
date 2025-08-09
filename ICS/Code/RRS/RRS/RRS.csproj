@@ -48,18 +48,22 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Admin_Factories\AdminAddTrainFeature.cs" />
+    <Compile Include="Admin_Factories\AdminRevenueReportFeature.cs" />
     <Compile Include="Admin_Factories\AdminSetUserActiveFeature.cs" />
     <Compile Include="Admin_Factories\AdminViewAllBookingsFeature.cs" />
     <Compile Include="Admin_Factories\AdminViewAllPaymentsFeature.cs" />
     <Compile Include="Admin_Factories\AdminViewAllUsersFeature.cs" />
+    <Compile Include="Admin_Factories\AdminViewPassengersFeature.cs" />
     <Compile Include="Admin_Factories\AdminViewSeatAvailabilityFeature.cs" />
     <Compile Include="Admin_Factories\AdminViewStationsFeature.cs" />
     <Compile Include="Admin_Factories\AdminViewTrainsFeature.cs" />
     <Compile Include="Admin_Features\AdminAddTrain.cs" />
+    <Compile Include="Admin_Features\AdminRevenueReport.cs" />
     <Compile Include="Admin_Features\AdminSetUserActive.cs" />
     <Compile Include="Admin_Features\AdminViewAllBookings.cs" />
     <Compile Include="Admin_Features\AdminViewAllPayments.cs" />
     <Compile Include="Admin_Features\AdminViewAllUsers.cs" />
+    <Compile Include="Admin_Features\AdminViewPassengers.cs" />
     <Compile Include="Admin_Features\AdminViewSeatAvailability.cs" />
     <Compile Include="Admin_Features\AdminViewStations.cs" />
     <Compile Include="Admin_Features\AdminViewTrains.cs" />

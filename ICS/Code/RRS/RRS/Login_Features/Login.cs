@@ -49,7 +49,8 @@ namespace RRS.Login_Features
                         CancelBooking.loggedInUserId = LoggedInUserId;
 
                         Console.WriteLine($"Login successful. Welcome, {LoggedInUserName}!");
-                        UserMenu.userMenu();
+                        return;
+                        //UserMenu.userMenu();
                     }
 
                     //else
@@ -62,13 +63,16 @@ namespace RRS.Login_Features
                 else
                 {
                     Console.Clear();
-                    Console.WriteLine("Please check your credentials.");
+                    
                     LoggedInUserId = null;
                     LoggedInUserName = null;
+                    Console.WriteLine("Please check your credentials.");
                 }
             }
             catch (Exception ex)
             {
+                LoggedInUserId = null;
+                LoggedInUserName = null;
                 Console.WriteLine($"Error: {ex.Message}");
             }
         }

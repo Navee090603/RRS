@@ -23,7 +23,9 @@ namespace RRS.Login_Features
                 Console.WriteLine("6. View All Payments");
                 Console.WriteLine("7. View Seat Availability");
                 Console.WriteLine("8. View All Stations");
-                Console.WriteLine("9. Logout");
+                Console.WriteLine("9. View Revenue Report");
+                Console.WriteLine("10. View All Passengers");
+                Console.WriteLine("11. Logout");
                 Console.Write("\nSelect option: ");
                 string opt = Console.ReadLine();
                 Console.Clear();
@@ -63,6 +65,15 @@ namespace RRS.Login_Features
                         PauseAndClear();
                         break;
                     case "9":
+                        Factory.All_Factory.Create("viewreport").Execute();
+                        PauseAndClear();
+                        break;
+                    case "10":
+                        Factory.All_Factory.Create("viewpassengers").Execute();
+                        PauseAndClear();
+                        break;
+
+                    case "11":
                         AdminLogin.LoggedInAdminId = null;
                         AdminLogin.LoggedInAdminName = null;
                         Console.WriteLine("Logged out.");

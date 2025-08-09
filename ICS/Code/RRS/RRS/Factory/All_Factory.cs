@@ -31,6 +31,8 @@ namespace RRS.Factory
                 case "viewseatavailability": return new AdminViewSeatAvailabilityFeature();//14
                 case "usermenu": return new UserMenuFeature();//15
                 case "adminmenu": return new AdminMenuFeature();//16
+                case "viewreport": return new AdminRevenueReportFeature();//17
+                case "viewpassengers": return new AdminViewPassengersFeature();//18
 
                 default: throw new System.ArgumentException("Unknown feature");
             }

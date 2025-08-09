@@ -85,3 +85,76 @@ BEGIN
       AND @journeydate <= '2025-12-05'
     ORDER BY t.departure_time;
 END
+
+
+-----------------
+
+// ... [previous code remains the same until the train search loop]
+
+                // ... [previous code remains the same until the train search loop]
+
+                // 5. Journey Date & Train Search Loop
+                DateTime journeyDate;
+                DataTable trains;
+                while (true)
+                {
+                    // 5a. Input date or exit
+                    while (true)
+                    {
+                        Console.WriteLine();
+                        Console.Write("Journey Date (YYYY-MM-DD or 'exit' to cancel): ");
+                        string dateInput = (Console.ReadLine() ?? "").Trim().ToLower();
+                        if (dateInput == "exit")
+                        {
+                            Console.WriteLine("Booking cancelled by user.");
+                            return;
+                        }
+                        if (DateTime.TryParse(dateInput, out journeyDate))
+                            break;
+
+                        Console.WriteLine("Invalid date format. Please enter date as YYYY-MM-DD.\n");
+                    }
+
+                    // 5b. Search trains
+                    trains = DataAccess.Instance.ExecuteTable(
+                        "sp_searchtrains",
+                        new SqlParameter("@sourcestationid", sourceId),
+                        new SqlParameter("@destinationstationid", destId),
+                        new SqlParameter("@journeydate", journeyDate),
+                        new SqlParameter("@seattype", seatType),
+                        new SqlParameter("@passengercount", passengerCount)
+                    );
+
+                    // Check for "No Running Trains Today" message
+                    if (trains.Rows.Count > 0 && trains.Rows[0]["message"] != DBNull.Value && 
+                        trains.Rows[0]["message"].ToString() == "No Running Trains Today")
+                    {
+                        Console.WriteLine("\nNo trains running on this date.");
+                        Console.Write("Press Enter to try another date or type 'exit' to cancel: ");
+                        string choice = (Console.ReadLine() ?? "").Trim().ToLower();
+                        if (choice == "exit")
+                        {
+                            Console.WriteLine("Booking cancelled by user.");
+                            return;
+                        }
+                        continue;
+                    }
+
+                    if (trains.Rows.Count == 0)
+                    {
+                        Console.WriteLine("\nNo trains found. Booking is allowed only for dates up to '2025-12-05'.");
+                        Console.Write("Press Enter to try another date or type 'exit' to cancel: ");
+                        string choice = (Console.ReadLine() ?? "").Trim().ToLower();
+                        if (choice == "exit")
+                        {
+                            Console.WriteLine("Booking cancelled by user.");
+                            return;
+                        }
+                        continue;
+                    }
+
+                    // found trains → exit loop
+                    break;
+                }
+
+// ... [rest of the code remains the same]

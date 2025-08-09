@@ -209,7 +209,7 @@ begin
     select station_id, station_name, station_code, state
     from stations
     where is_active = 1
-    order by station_name
+    order by station_id
 end
 
 -- =====================================================
@@ -432,6 +432,7 @@ CREATE OR ALTER PROCEDURE sp_cancelbooking
     @userid INT,
     @passengername NVARCHAR(100),
     @cancellationreason NVARCHAR(200) = NULL
+	--@refundamount DECIMAL(10,2)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -485,9 +486,15 @@ BEGIN
         WHERE passenger_id = @passengerid
 
         -- Update booking's total_amount and refund in payments
-        UPDATE bookings
-        SET total_amount = total_amount - @fare_paid
-        WHERE booking_id = @bookingid
+        --UPDATE bookings
+        --SET total_amount = total_amount - @fare_paid
+        --WHERE booking_id = @bookingid
+
+		-- Update refund amount in bookings (separate column)
+		UPDATE bookings
+		SET refund_amount = ISNULL(refund_amount, 0) + @refundamount
+		WHERE booking_id = @bookingid
+
 
         UPDATE payments
         SET refund_amount = ISNULL(refund_amount, 0) + @refundamount, refund_time = GETDATE()
@@ -849,7 +856,7 @@ begin
     end
 end
 
-c.--For Activate and Deactivate User
+--c. For Activate and Deactivate User
 
 create or alter procedure sp_setuseractive
 @userid int,
@@ -870,9 +877,53 @@ begin
     select user_id, name, email, is_active from users where user_id = @userid;
 end
 
+drop procedure dbo.sp_setuseractive
 
 
 
+-- d. get revenue report
+create or alter procedure sp_getrevenuereport
+    @fromdate date,
+    @todate date,
+    @trainid int = null,
+    @groupby nvarchar(10) = 'daily'
+as
+begin
+    set nocount on
+
+    if @groupby = 'daily'
+    begin
+        select
+            b.journey_date,
+            count(distinct b.booking_id) as total_bookings,
+            sum(b.passenger_count) as total_passengers,
+            sum(b.total_amount) as total_revenue,
+            sum(case when b.booking_status = 'cancelled' then p.refund_amount else 0 end) as total_refunds,
+            sum(b.total_amount) - sum(case when b.booking_status = 'cancelled' then p.refund_amount else 0 end) as net_revenue
+        from bookings b
+        left join payments p on b.booking_id = p.booking_id
+        where b.journey_date between @fromdate and @todate
+          and (@trainid is null or b.train_id = @trainid)
+        group by b.journey_date
+        order by b.journey_date
+    end
+    else if @groupby = 'train'
+    begin
+        select
+            t.train_number,
+            t.train_name,
+            count(distinct b.booking_id) as total_bookings,
+            sum(b.passenger_count) as total_passengers,
+            sum(b.total_amount) as total_revenue,
+            avg(b.total_amount) as avg_booking_value
+        from bookings b
+        inner join trains t on b.train_id = t.train_id
+        where b.journey_date between @fromdate and @todate
+          and (@trainid is null or b.train_id = @trainid)
+        group by t.train_id, t.train_number, t.train_name
+        order by total_revenue desc
+    end
+end
 
 
 

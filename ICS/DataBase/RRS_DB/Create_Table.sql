@@ -146,3 +146,6 @@ select * from payments --6
 select * from seat_availability where train_id=6--7
 select * from stations --8 
 
+ALTER TABLE bookings ADD refund_amount DECIMAL(10,2) DEFAULT 0;
+
+

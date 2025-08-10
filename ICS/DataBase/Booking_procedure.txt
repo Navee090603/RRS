@@ -1,0 +1,115 @@
+create or alter procedure sp_makebooking
+    @userid int,
+    @trainid int,
+    @journeydate date,
+    @passengercount int,
+    @seattype nvarchar(10),
+    @paymentmethod nvarchar(20),
+    @transactionid nvarchar(100),
+    @passengernames nvarchar(max),
+    @passengerages nvarchar(100),
+    @passengergenders nvarchar(100),
+    @bookingid int output,
+    @pnrnumber nvarchar(20) output,
+    @totalamount decimal(10,2) output,
+    @status nvarchar(20) output
+as
+begin
+    set nocount on
+    begin transaction
+
+    begin try
+        -- Validate journey date
+        if @journeydate < cast(getdate() as date) or @journeydate > '2025-12-01'
+        begin
+            select 0 as success, 'Booking is only allowed for journeys on or before 2025-12-01.' as message,
+                   null as pnr, 0 as amount, 'failed' as bookingstatus
+            rollback transaction
+            return
+        end
+
+        -- Validate train and get fare
+        declare @fareperpassenger decimal(8,2)
+        declare @availableseats int
+
+        select
+            @fareperpassenger = case @seattype
+                when 'sleeper' then sleeper_fare
+                when 'ac3' then ac3_fare
+                when 'ac2' then ac2_fare
+            end
+        from trains
+        where train_id = @trainid and is_active = 1
+
+        if @fareperpassenger is null
+        begin
+            select 0 as success, 'Invalid train or seat type.' as message,
+                   null as pnr, 0 as amount, 'failed' as bookingstatus
+            rollback transaction
+            return
+        end
+
+        -- Get available seats (default to 0 if no row exists)
+        select
+            @availableseats = case @seattype
+                when 'sleeper' then isnull(sleeper_available, 0)
+                when 'ac3' then isnull(ac3_available, 0)
+                when 'ac2' then isnull(ac2_available, 0)
+            end
+        from seat_availability
+        where train_id = @trainid and journey_date = @journeydate
+
+        if @availableseats is null
+            set @availableseats = 0
+
+        -- Determine booking status
+        set @status = case when @availableseats >= @passengercount then 'confirmed' else 'waitlist' end
+        set @totalamount = @fareperpassenger * @passengercount
+
+        -- Create booking
+        insert into bookings (user_id, train_id, journey_date, passenger_count, total_amount, booking_status)
+        values (@userid, @trainid, @journeydate, @passengercount, @totalamount, @status)
+
+        set @bookingid = scope_identity()
+        select @pnrnumber = pnr_number from bookings where booking_id = @bookingid
+
+        -- Parse passenger details
+        declare @names table(id int identity, name nvarchar(100))
+        declare @ages table(id int identity, age int)
+        declare @genders table(id int identity, gender nvarchar(10))
+
+        insert into @names select value from string_split(@passengernames, ',')
+        insert into @ages select cast(value as int) from string_split(@passengerages, ',')
+        insert into @genders select value from string_split(@passengergenders, ',')
+
+        -- Insert passengers
+        insert into passengers (booking_id, name, age, gender, seat_type, fare_paid, status)
+        select
+            @bookingid,
+            ltrim(rtrim(n.name)),
+            a.age,
+            ltrim(rtrim(g.gender)),
+            @seattype,
+            @fareperpassenger,
+            @status
+        from @names n
+        inner join @ages a on n.id = a.id
+        inner join @genders g on n.id = g.id
+
+        -- Record payment
+        insert into payments (booking_id, amount, payment_method, transaction_id)
+        values (@bookingid, @totalamount, @paymentmethod, @transactionid)
+
+        commit transaction
+
+        select 1 as success, 'Booking created successfully.' as message,
+               @pnrnumber as pnr, @totalamount as amount, @status as bookingstatus
+
+    end try
+    begin catch
+        rollback transaction
+        select 0 as success, error_message() as message,
+               null as pnr, 0 as amount, 'failed' as bookingstatus
+    end catch
+end
+go

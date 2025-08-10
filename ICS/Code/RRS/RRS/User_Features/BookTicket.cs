@@ -339,5 +339,18 @@ namespace RRS.User_Features
                 Console.WriteLine("Invalid number. Please try again.\n");
             }
         }
+
+        public static bool CanBookTicket()
+        {
+            return loggedInUserId != null;
+        }
+
+        public static bool ValidateSourceAndDestination(int sourceId, int destId, HashSet<int> stationIds)
+        {
+            if (sourceId == destId) return false;
+            if (!stationIds.Contains(sourceId) || !stationIds.Contains(destId)) return false;
+            return true;
+        }
+
     }
 }

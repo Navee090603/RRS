@@ -14,9 +14,7 @@ create table users (
     created_at datetime2 default getdate()
 )
 
--- Insert default admin
-insert into users (name, email, phone, password_hash, user_type) 
-values ('System Admin', 'naveen@railway.com', '9677396491', '10', 'Admin')
+
 
 -- 2. stations
 
@@ -129,13 +127,28 @@ create table admin_logs (
     log_time datetime2 default getdate(),
     foreign key (admin_id) references users(user_id)
 )
+--Altering some tables
+
 
 alter table passengers
 drop constraint CK__passenger__statu__59FA5E80;
 
+--
+
 alter table passengers
 add constraint CK__passenger__status
-    check (status in ('confirmed', 'waitlist', 'rac', 'cancelled'));
+    check (status in ('confirmed', 'waitlist', 'cancelled'));
+--
+
+alter table bookings add refund_amount decimal(10,2) default 0;
+
+--
+
+alter table trains alter column train_number nvarchar(20) NOT NULL;
+
+
+
+--All Tables
 
 select * from users --1
 select * from trains--2
@@ -143,14 +156,13 @@ select * from admin_logs --3
 select * from bookings --4
 select * from passengers --5
 select * from payments --6
-select * from seat_availability where train_id=2--7
+select * from seat_availability --7
+select train_id,sleeper_available+ac3_available+ac2_available as total,journey_date from seat_availability where train_id=8
 select * from stations --8 
 
-ALTER TABLE bookings ADD refund_amount DECIMAL(10,2) DEFAULT 0;
 
-DELETE FROM seat_availability
-WHERE train_id = 6
-  AND dbo.fn_isvalidjourneydate(train_id, journey_date) = 0;
+
+
 
 
 

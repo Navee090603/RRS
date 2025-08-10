@@ -1,12 +1,13 @@
 -- STATIONS
+
 insert into stations (station_name, station_code, state) values
 ('Coimbatore', 'CBE', 'Tamil Nadu'),   -- 1
 ('Chennai', 'MAS', 'Tamil Nadu'),      -- 2
 ('Bangalore', 'SBC', 'Karnataka')     -- 3
 
-ALTER TABLE trains ALTER COLUMN train_number NVARCHAR(20) NOT NULL;
+--Trains
 
-INSERT INTO trains (
+insert into trains (
   train_number,
   train_name,
   source_station_id,
@@ -21,7 +22,7 @@ INSERT INTO trains (
   sleeper_fare,
   ac3_fare,
   ac2_fare
-) VALUES
+) values
 
 -- 3 trains with total_seats = 10 (5 sleeper / 3 AC3 / 2 AC2)
 ('CBE-MAS-001', 'Coimbatore–Chennai Express',      1, 2, '07:00', '13:00', '1111111', 10, 5, 3, 2, 400.00, 700.00, 1100.00),
@@ -34,30 +35,6 @@ INSERT INTO trains (
 ('SBC-MAS-001', 'Bangalore–Chennai Return',         3, 2, '13:00', '19:00', '1111101', 50, 30, 12, 8, 420.00, 720.00, 1120.00);
 
 
---120 days seat availability
-
---INSERT OF SEAT_AVAILABILITY
--- variables for date range
-declare @fromdate date = cast(getdate() as date);
-declare @todate date = dateadd(day, 119, @fromdate); -- 120 days
-
--- generate date series
-with daterange as (
-    select @fromdate as journey_date
-    union all
-    select dateadd(day, 1, journey_date)
-    from daterange
-    where journey_date < @todate
-)
-insert into seat_availability (train_id, journey_date, sleeper_available, ac3_available, ac2_available)
-select t.train_id, d.journey_date, t.sleeper_seats, t.ac3_seats, t.ac2_seats
-from trains t
-cross join daterange d
-where t.is_active = 1
-    and not exists (
-        select 1
-        from seat_availability sa
-        where sa.train_id = t.train_id
-          and sa.journey_date = d.journey_date
-    )
-option (maxrecursion 130)
+-- Insert default admin
+insert into users (name, email, phone, password_hash, user_type) 
+values ('System Admin', 'naveen@railway.com', '9677396491', '10', 'Admin')

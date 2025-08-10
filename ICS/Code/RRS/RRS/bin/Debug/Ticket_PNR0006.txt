@@ -1,0 +1,15 @@
+=== Railway Reservation Ticket ===
+PNR Number : PNR0006
+User Name  : Hari
+Train      : Chennai–Coimbatore Return (MAS-CBE-001)
+Journey Date: 2025-09-26
+Booking Time: 2025-08-10 18:48
+Status     : confirmed
+Total Amount: ₹400.00
+
+Passengers:
+-------------------------------------------------------------
+Name            Age  Gender Type     Coach  Seat   Fare     Status    
+-------------------------------------------------------------
+Hari            50   male   sleeper                ₹400.00  confirmed 
+-------------------------------------------------------------

@@ -30,17 +30,44 @@ namespace RRS.Admin_Features
                     Console.WriteLine("Invalid input. Please enter a numeric User ID.");
                 }
 
-
                 Console.WriteLine();
-                Console.Write("Activate? (yes/no): ");
+                Console.Write("Activate? (yes/no) or (c)ancel: ");
                 string yn = Console.ReadLine().Trim().ToLower();
-                int active = (yn == "yes" || yn == "y") ? 1 : 0;
+
+                if (yn == "c" || yn == "cancel")
+                {
+                    Console.WriteLine("Operation cancelled by admin.");
+                    return;
+                }
+
+                int active;
+                if (yn == "yes" || yn == "y")
+                {
+                    active = 1;
+                }
+                else if (yn == "no" || yn == "n")
+                {
+                    active = 0;
+                }
+                else
+                {
+                    Console.WriteLine("Invalid choice. Operation aborted.");
+                    return;
+                }
+
+                // Prevent admin from deactivating themselves
+                int actualAdminId = loggedInAdminId ?? 1;
+                if (active == 0 && userId == actualAdminId)
+                {
+                    Console.WriteLine("Error: You cannot deactivate your own admin account.");
+                    return;
+                }
 
                 // Call stored procedure to update user status
                 var dt = DataAccess.Instance.ExecuteTable("sp_setuseractive",
                     new SqlParameter("@userid", userId),
                     new SqlParameter("@active", active),
-                    new SqlParameter("@admin_id", loggedInAdminId ?? 1)
+                    new SqlParameter("@admin_id", actualAdminId)
                 );
 
                 // Display result 
@@ -69,5 +96,6 @@ namespace RRS.Admin_Features
                 Console.WriteLine($"Error: {ex.Message}");
             }
         }
+
     }
 }

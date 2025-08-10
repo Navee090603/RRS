@@ -72,7 +72,9 @@ namespace RRS
                 }
                 else if (opt == "3")
                 {
+                    
                     Console.WriteLine("Exiting system...");
+                    PauseAndClear();
                     break;
                 }
                 else

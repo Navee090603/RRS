@@ -9,10 +9,11 @@ using System.Text;
 
 namespace RRS.User_Features
 {
-    public class DownloadTicket 
+    public class DownloadTicket
     {
         public static void downloadTicket()
         {
+            Console.Clear();
             Console.Write("Enter PNR Number: ");
             string pnrNumber = Console.ReadLine()?.Trim();
 
@@ -24,12 +25,11 @@ namespace RRS.User_Features
 
             try
             {
-                // Step 1: Get booking ID from PNR
+                // Get booking ID from PNR
                 var pnrParam = new SqlParameter[]
                 {
                     new SqlParameter("@pnr_number", pnrNumber)
                 };
-
                 var bookingIdDt = DataAccess.Instance.ExecuteTable(
                     "SELECT booking_id FROM bookings WHERE pnr_number = @pnr_number",
                     pnrParam
@@ -43,12 +43,11 @@ namespace RRS.User_Features
 
                 int bookingId = Convert.ToInt32(bookingIdDt.Rows[0]["booking_id"]);
 
-                // Step 2: Get full booking details
+                // Get full booking details
                 var bookingParams = new SqlParameter[]
                 {
                     new SqlParameter("@booking_id", bookingId)
                 };
-
                 var bookingDt = DataAccess.Instance.ExecuteTable(
                     "SELECT b.pnr_number, b.booking_time, b.journey_date, b.total_amount, b.booking_status, " +
                     "u.name AS user_name, t.train_number, t.train_name " +
@@ -59,12 +58,11 @@ namespace RRS.User_Features
                     bookingParams
                 );
 
-                // Get passenger details (new SqlParameter array)
+                // Get passenger details
                 var passengerParams = new SqlParameter[]
                 {
                     new SqlParameter("@booking_id", bookingId)
                 };
-
                 var passengerDt = DataAccess.Instance.ExecuteTable(
                     "SELECT name, age, gender, seat_type, seat_number, coach_number, fare_paid, status " +
                     "FROM passengers WHERE booking_id = @booking_id",
@@ -73,16 +71,16 @@ namespace RRS.User_Features
 
                 var booking = bookingDt.Rows[0];
 
-                // Step 3: Build ticket content
+                // Build ticket content
                 var sb = new StringBuilder();
                 sb.AppendLine("=== Railway Reservation Ticket ===");
-                sb.AppendLine($"PNR Number     : {booking["pnr_number"]}");
-                sb.AppendLine($"User Name : {booking["user_name"]}");
-                sb.AppendLine($"Train          : {booking["train_name"]} ({booking["train_number"]})");
-                sb.AppendLine($"Journey Date   : {Convert.ToDateTime(booking["journey_date"]):yyyy-MM-dd}");
-                sb.AppendLine($"Booking Time   : {Convert.ToDateTime(booking["booking_time"]):yyyy-MM-dd HH:mm}");
-                sb.AppendLine($"Status         : {booking["booking_status"]}");
-                sb.AppendLine($"Total Amount   : ₹{Convert.ToDecimal(booking["total_amount"]):N2}");
+                sb.AppendLine($"PNR Number : {booking["pnr_number"]}");
+                sb.AppendLine($"User Name  : {booking["user_name"]}");
+                sb.AppendLine($"Train      : {booking["train_name"]} ({booking["train_number"]})");
+                sb.AppendLine($"Journey Date: {Convert.ToDateTime(booking["journey_date"]):yyyy-MM-dd}");
+                sb.AppendLine($"Booking Time: {Convert.ToDateTime(booking["booking_time"]):yyyy-MM-dd HH:mm}");
+                sb.AppendLine($"Status     : {booking["booking_status"]}");
+                sb.AppendLine($"Total Amount: ₹{Convert.ToDecimal(booking["total_amount"]):N2}");
                 sb.AppendLine();
                 sb.AppendLine("Passengers:");
                 sb.AppendLine("-------------------------------------------------------------");
@@ -99,19 +97,67 @@ namespace RRS.User_Features
 
                 sb.AppendLine("-------------------------------------------------------------");
 
-                // Step 4: Ask user for folder to save
-                Console.Write("Enter folder path to save ticket (leave blank for current directory): ");
-                string folderPath = Console.ReadLine()?.Trim();
-                if (string.IsNullOrEmpty(folderPath))
+                // Ask user for folder to save, with retry or cancel
+                string folderPath;
+                while (true)
                 {
-                    folderPath = Directory.GetCurrentDirectory();
+                    Console.Write("Enter folder path to save ticket (leave blank for current directory, or 'c' to cancel): ");
+                    folderPath = Console.ReadLine()?.Trim();
+
+                    if (string.IsNullOrEmpty(folderPath))
+                    {
+                        folderPath = Directory.GetCurrentDirectory();
+                    }
+                    else if (string.Equals(folderPath, "c", StringComparison.OrdinalIgnoreCase))
+                    {
+                        Console.WriteLine("Operation cancelled.");
+                        return;
+                    }
+
+                    if (Directory.Exists(folderPath))
+                    {
+                        break;
+                    }
+
+                    Console.WriteLine("Could not find the specified path. Please try again or press 'c' to cancel.");
                 }
 
                 string fileName = $"Ticket_{booking["pnr_number"]}.txt";
                 string fullPath = Path.Combine(folderPath, fileName);
 
-                File.WriteAllText(fullPath, sb.ToString());
+                // Attempt to write, handle IO errors gracefully with one more retry
+                try
+                {
+                    File.WriteAllText(fullPath, sb.ToString(), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+                }
+                catch (IOException ioEx)
+                {
+                    Console.WriteLine($"I/O error while saving: {ioEx.Message}");
+                    Console.WriteLine("Please enter another folder path or 'c' to cancel.");
+                    // one more path prompt
+                    while (true)
+                    {
+                        Console.Write("Folder path: ");
+                        var retryPath = Console.ReadLine()?.Trim();
 
+                        if (string.Equals(retryPath, "c", StringComparison.OrdinalIgnoreCase))
+                        {
+                            Console.WriteLine("Operation cancelled.");
+                            return;
+                        }
+
+                        if (!string.IsNullOrEmpty(retryPath) && Directory.Exists(retryPath))
+                        {
+                            fullPath = Path.Combine(retryPath, fileName);
+                            File.WriteAllText(fullPath, sb.ToString(), new UTF8Encoding(false));
+                            break;
+                        }
+
+                        Console.WriteLine("Path not found. Try again or 'c' to cancel.");
+                    }
+                }
+
+                Console.Clear();
                 Console.WriteLine($"Ticket saved to: {fullPath}");
             }
             catch (Exception ex)

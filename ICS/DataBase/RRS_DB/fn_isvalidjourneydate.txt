@@ -1,0 +1,29 @@
+--1. is valid journey date
+create or alter function fn_isvalidjourneydate(
+    @trainid int,
+    @journeydate date
+)
+returns bit
+as
+begin
+    declare @isvalid bit = 0;
+    declare @runningdays nvarchar(7);
+    declare @currentdate date = cast(getdate() as date);
+
+    if @journeydate < @currentdate
+        return 0;
+
+    select @runningdays = running_days
+    from trains
+    where train_id = @trainid and is_active = 1;
+
+    declare @dayindex int = ((datepart(weekday, @journeydate) + @@datefirst - 2) % 7) + 1;
+
+    if @runningdays is not null and len(@runningdays) >= @dayindex
+    begin
+        set @isvalid = case when substring(@runningdays, @dayindex, 1) = '1' then 1 else 0 end;
+    end;
+
+    return @isvalid;
+end;
+go

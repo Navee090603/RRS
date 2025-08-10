@@ -1,4 +1,6 @@
-```sql
+--Procedures
+
+--1.sp_cancelbooking
 create or alter procedure sp_cancelbooking
     @pnrnumber nvarchar(20),
     @userid int,
@@ -86,6 +88,7 @@ end;
 go
 
 ---------------------------------------------------
+--2.sp_generateavailability
 
 create or alter procedure sp_generateavailability
     @trainid int,
@@ -125,6 +128,7 @@ end;
 go
 
 ---------------------------------------------------
+--3. sp_getallstations
 
 create or alter procedure sp_getallstations
 as
@@ -139,6 +143,7 @@ end;
 go
 
 ---------------------------------------------------
+--4.sp_getbookingdetails
 
 create or alter procedure sp_getbookingdetails
     @pnrnumber nvarchar(20),
@@ -200,6 +205,7 @@ end;
 go
 
 ---------------------------------------------------
+--5.sp_getbookingreports
 
 create or alter procedure sp_getbookingreports
     @fromdate date,
@@ -238,6 +244,7 @@ end;
 go
 
 ---------------------------------------------------
+--6.sp_getrevenuereport
 
 create or alter procedure sp_getrevenuereport
     @fromdate date,
@@ -284,6 +291,7 @@ end;
 go
 
 ---------------------------------------------------
+--7.sp_gettraindetails
 
 create or alter procedure sp_gettraindetails
     @trainid int,
@@ -313,6 +321,7 @@ end;
 go
 
 ---------------------------------------------------
+--8.sp_getuserbookings
 
 create or alter procedure sp_getuserbookings
     @userid int,
@@ -357,6 +366,7 @@ end;
 go
 
 ---------------------------------------------------
+--9.sp_loginuser
 
 create or alter procedure sp_loginuser
     @email nvarchar(255),
@@ -384,6 +394,7 @@ end;
 go
 
 ---------------------------------------------------
+--10.sp_makebooking
 
 create or alter procedure sp_makebooking
     @userid int,
@@ -494,6 +505,7 @@ end;
 go
 
 ---------------------------------------------------
+--11.sp_registeruser
 
 create or alter procedure sp_registeruser
     @name nvarchar(100),
@@ -536,6 +548,7 @@ end;
 go
 
 ---------------------------------------------------
+--12.sp_searchtrains
 
 create or alter procedure sp_searchtrains
     @sourcestationid int,
@@ -603,6 +616,7 @@ end;
 go
 
 ---------------------------------------------------
+--13.sp_setuseractive
 
 create or alter procedure sp_setuseractive
 @userid int,
@@ -625,10 +639,9 @@ end;
 go
 
 ---------------------------------------------------
+--Functions
 
--- Other SQL queries are ordered alphabetically in the previous response, but you asked for them to be given separately here.
-
--- a. check seat availability
+-- 1. check seat availability
 create or alter function fn_getseatavailability(
     @trainid int,
     @journeydate date,
@@ -655,7 +668,7 @@ go
 
 ---------------------------------------------------
 
--- b. calculate fare
+-- 2. calculate fare
 create or alter function fn_calculatefare(
     @trainid int,
     @seattype nvarchar(10),
@@ -682,7 +695,7 @@ go
 
 ---------------------------------------------------
 
---c. is valid journey date
+--3. is valid journey date
 create or alter function fn_isvalidjourneydate(
     @trainid int,
     @journeydate date
@@ -711,4 +724,131 @@ begin
     return @isvalid;
 end;
 go
-```
+
+---------------------------------------------------
+--Triggers
+
+-- 1. auto-generate seat availability when train is added
+create or alter trigger trg_train_insert_availability
+on trains after insert
+as
+begin
+    set nocount on
+
+    declare @train_id int, @sleeper int, @ac3 int, @ac2 int
+
+    select @train_id = train_id, @sleeper = sleeper_seats,
+           @ac3 = ac3_seats, @ac2 = ac2_seats
+    from inserted
+
+    -- generate availability for next 120 days
+    ;with daterange as (
+        select cast(getdate() as date) as journey_date
+        union all
+        select dateadd(day, 1, journey_date)
+        from daterange
+        where journey_date < dateadd(day, 120, cast(getdate() as date))
+    )
+    insert into seat_availability (train_id, journey_date, sleeper_available, ac3_available, ac2_available)
+    select @train_id, journey_date, @sleeper, @ac3, @ac2
+    from daterange
+    option (maxrecursion 150)
+end
+
+-- 2. update seat availability when booking is made
+
+create or alter trigger trg_passenger_seat_update
+on passengers after insert
+as
+begin
+    set nocount on;
+
+    -- Calculate how many passengers inserted per seat type
+    update sa
+    set sleeper_available = sa.sleeper_available - (
+            select count(*) from inserted i
+            inner join bookings b on b.booking_id = i.booking_id
+            where i.seat_type = 'sleeper'
+              and b.train_id = sa.train_id
+              and b.journey_date = sa.journey_date
+        ),
+        ac3_available = sa.ac3_available - (
+            select count(*) from inserted i
+            inner join bookings b on b.booking_id = i.booking_id
+            where i.seat_type = 'ac3'
+              and b.train_id = sa.train_id
+              and b.journey_date = sa.journey_date
+        ),
+        ac2_available = sa.ac2_available - (
+            select count(*) from inserted i
+            inner join bookings b on b.booking_id = i.booking_id
+            where i.seat_type = 'ac2'
+              and b.train_id = sa.train_id
+              and b.journey_date = sa.journey_date
+        ),
+        last_updated = getdate()
+    from seat_availability sa
+    where exists (
+        select 1 from inserted i
+        inner join bookings b on b.booking_id = i.booking_id
+        where b.train_id = sa.train_id
+          and b.journey_date = sa.journey_date
+    )
+end
+
+-- 3. restore seat availability when booking is cancelled
+
+create or alter trigger trg_passenger_seat_restore
+on passengers after update
+as
+begin
+    set nocount on;
+
+    -- restore seat availability when passenger status changes to cancelled
+    if update(status)
+    begin
+        -- For each ticket that's cancelled in this update, restore seat count for the correct type
+        update sa
+        set sleeper_available = sa.sleeper_available + 
+            (select count(*) from inserted i
+                inner join deleted d on i.passenger_id = d.passenger_id
+                inner join bookings b on b.booking_id = i.booking_id
+                where i.seat_type = 'sleeper'
+                  and i.status = 'cancelled'
+                  and d.status != 'cancelled'
+                  and b.train_id = sa.train_id
+                  and b.journey_date = sa.journey_date),
+            ac3_available = sa.ac3_available + 
+            (select count(*) from inserted i
+                inner join deleted d on i.passenger_id = d.passenger_id
+                inner join bookings b on b.booking_id = i.booking_id
+                where i.seat_type = 'ac3'
+                  and i.status = 'cancelled'
+                  and d.status != 'cancelled'
+                  and b.train_id = sa.train_id
+                  and b.journey_date = sa.journey_date),
+            ac2_available = sa.ac2_available + 
+            (select count(*) from inserted i
+                inner join deleted d on i.passenger_id = d.passenger_id
+                inner join bookings b on b.booking_id = i.booking_id
+                where i.seat_type = 'ac2'
+                  and i.status = 'cancelled'
+                  and d.status != 'cancelled'
+                  and b.train_id = sa.train_id
+                  and b.journey_date = sa.journey_date),
+            last_updated = getdate()
+        from seat_availability sa
+        where exists (
+            select 1 from inserted i
+            inner join deleted d on i.passenger_id = d.passenger_id
+            inner join bookings b on b.booking_id = i.booking_id
+            where (
+                    (i.seat_type = 'sleeper' and i.status = 'cancelled' and d.status != 'cancelled')
+                 or (i.seat_type = 'ac3' and i.status = 'cancelled' and d.status != 'cancelled')
+                 or (i.seat_type = 'ac2' and i.status = 'cancelled' and d.status != 'cancelled')
+                )
+              and b.train_id = sa.train_id
+              and b.journey_date = sa.journey_date
+        )
+    end
+end

@@ -250,4 +250,4 @@ These scripts provide the full backend schema and logic for the Railway Reservat
 
 ## Final Notes
 
-This comprehensive report, along with the attached SQL scripts and images, documents the design, features, workflow, database structure, and technical scope of the Railway Reservation System (RRS) project. It is ready for evaluation, demonstration, or further development as a real-world railway booking solution.
+This comprehensive report, along with the attached SQL scripts and images,  features, workflow, database structure, and technical scope of the Railway Reservation System (RRS) project. It is ready for evaluation, demonstration, or further development as a real-world railway booking solution.

@@ -105,6 +105,7 @@ go
 ---------------------------------------------------
 --3.sp_getrevenuereport
 
+
 create or alter procedure sp_getrevenuereport
     @fromdate date,
     @todate date,
@@ -426,7 +427,7 @@ begin
                     when 'ac2' then isnull(sa.ac2_available, 0)
                 end >= @passengercount
             then 'available'
-            else 'waitlist'
+            else 'Not_Running'
         end as booking_status
     from trains t
     inner join stations s1 on t.source_station_id = s1.station_id
@@ -444,26 +445,39 @@ begin
 end;
 go
 
+
+
+
 ---------------------------------------------------
 --9.sp_setuseractive
 
-create or alter procedure sp_setuseractive
-@userid int,
-@active bit,
-@admin_id int
-as
-begin
+create or alter procedure sp_setuseractive 
+    @userid int, 
+    @active bit, 
+    @admin_id int 
+as 
+begin 
     set nocount on;
-    
-    update users
-    set is_active = @active
+
+    -- prevent admin from deactivating themselves
+    if @userid = @admin_id and @active = 0
+    begin
+        throw 50000, 'error: admins cannot deactivate themselves.', 1;
+    end
+
+    update users 
+    set is_active = @active 
     where user_id = @userid;
 
-    insert into admin_logs (admin_id, action, target_table, record_id, details)
-    values (@admin_id, 'set user active/inactive', 'users', @userid, 
-             'set is_active to ' + cast(@active as varchar) + ' for user_id ' + cast(@userid as varchar));
+    insert into admin_logs 
+        (admin_id, action, target_table, record_id, details) 
+    values 
+        (@admin_id, 'set user active/inactive', 'users', @userid, 
+         'set is_active to ' + cast(@active as varchar) + ' for user_id ' + cast(@userid as varchar));
 
-    select user_id, name, email, is_active from users where user_id = @userid;
+    select user_id, name, email, is_active 
+    from users 
+    where user_id = @userid;
 end;
 go
 

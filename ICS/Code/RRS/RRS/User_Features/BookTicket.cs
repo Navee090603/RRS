@@ -100,13 +100,14 @@ namespace RRS.User_Features
                 // 5. Journey Date & Train Search Loop
                 DateTime journeyDate;
                 DataTable trains;
+                int trainId;
                 while (true)
                 {
                     // 5a. Input date or exit
                     while (true)
                     {
                         Console.WriteLine();
-                        Console.Write("Journey Date (YYYY-MM-DD) : ");
+                        Console.Write("Journey Date (YYYY-MM-DD) (type exit to cancel) : ");
                         string dateInput = (Console.ReadLine() ?? "").Trim().ToLower();
                         if (dateInput == "exit")
                         {
@@ -132,67 +133,70 @@ namespace RRS.User_Features
                     if (trains.Rows.Count == 0)
                     {
                         Console.WriteLine("\nNo trains found. Booking is allowed only for dates up to '2025-12-05'.");
-                        Console.WriteLine("\nPlease re-enter a valid journey date or type 'exit' to cancel.\n");
+                        Console.WriteLine("Please re-enter a valid journey date or type 'exit' to cancel.\n");
                         continue;
                     }
 
-                    // found trains → exit loop
-                    break;
-                }
+                    // 6. Display available trains
+                    Console.WriteLine("\nAvailable Trains:");
+                    Console.WriteLine(new string('-', 100));
+                    Console.WriteLine($"{"Train ID",-10} {"Train Name",-30} {"Dep",-10} {"Arr",-10} {"Seats",-8} {"Fare/Person",-15} {"Available",-20}");
+                    Console.WriteLine(new string('-', 100));
 
-                // 6. Display available trains
-                Console.WriteLine("\nAvailable Trains:");
-                Console.WriteLine(new string('-', 100));
-                Console.WriteLine($"{"Train ID",-10} {"Train Name",-25} {"Dep",-8} {"Arr",-8} {"Seats",-6} {"Fare/Person",-12} {"Booking Status",-15}");
-                Console.WriteLine(new string('-', 100));
-
-                foreach (DataRow row in trains.Rows)
-                {
-                    Console.WriteLine(
-                        $"{row["train_id"],-10} " +
-                        $"{row["train_name"],-25} " +
-                        $"{row["departure_time"],-8} " +
-                        $"{row["arrival_time"],-8} " +
-                        $"{row["available_seats"],-6} " +
-                        $"₹{Convert.ToDecimal(row["fare_per_passenger"]),-11:N2} " +
-                        $"{row["booking_status"],-15}"
-                    );
-                }
-
-                Console.WriteLine(new string('-', 100));
-
-                // 7. Train selection or exit
-                int trainId;
-                var validTrainIds = new HashSet<int>();
-                foreach (DataRow row in trains.Rows)
-                    validTrainIds.Add(Convert.ToInt32(row["train_id"]));
-
-                while (true)
-                {
-                    Console.Write("\nEnter Train ID to book (or 0 to cancel): ");
-                    string trainInput = (Console.ReadLine() ?? "").Trim();
-                    if (trainInput == "0")
+                    foreach (DataRow row in trains.Rows)
                     {
-                        Console.WriteLine("Booking cancelled by user.");
-                        return;
+                        Console.WriteLine(
+                            $"{row["train_id"],-10} " +
+                            $"{row["train_name"],-30} " +
+                            $"{row["departure_time"],-10} " +
+                            $"{row["arrival_time"],-10} " +
+                            $"{row["available_seats"],-8} " +
+                            $"₹{Convert.ToDecimal(row["fare_per_passenger"]),-15:N2} " +
+                            $"{row["booking_status"],-15}" 
+                            //$"{row["running_days"],17}"
+                        );
                     }
-                    if (int.TryParse(trainInput, out trainId) && validTrainIds.Contains(trainId))
-                        break;
 
-                    Console.WriteLine("Invalid Train ID. Please select from the listed trains or enter 0 to cancel.\n");
-                }
+                    Console.WriteLine(new string('-', 100));
 
-                // --- Journey date validation function call ---
-                var dtValid = DataAccess.Instance.ExecuteTable(
-                    "SELECT dbo.fn_isvalidjourneydate(@trainid, @journeydate) AS isvalid",
-                    new SqlParameter("@trainid", trainId),
-                    new SqlParameter("@journeydate", journeyDate)
-                );
-                bool isValid = dtValid.Rows.Count > 0 && Convert.ToInt32(dtValid.Rows[0]["isvalid"]) == 1;
-                if (!isValid)
-                {
-                    Console.WriteLine("Selected journey date is invalid for the chosen train. Please check the running days and try again.");
-                    return;
+                    // 7. Train selection or exit
+                    var validTrainIds = new HashSet<int>();
+                    foreach (DataRow row in trains.Rows)
+                        validTrainIds.Add(Convert.ToInt32(row["train_id"]));
+
+                    while (true)
+                    {
+                        Console.Write("\nEnter Train ID to book (or 0 to cancel): ");
+                        string trainInput = (Console.ReadLine() ?? "").Trim();
+                        if (trainInput == "0")
+                        {
+                            Console.WriteLine("Booking cancelled by user.");
+                            return;
+                        }
+                        if (int.TryParse(trainInput, out trainId) && validTrainIds.Contains(trainId))
+                            break;
+
+                        Console.WriteLine("Invalid Train ID. Please select from the listed trains or enter 0 to cancel.\n");
+                    }
+
+                    //  Journey date validation for selected train
+                    var dtValid = DataAccess.Instance.ExecuteTable(
+                        "SELECT dbo.fn_isvalidjourneydate(@trainid, @journeydate) AS isvalid",
+                        new SqlParameter("@trainid", trainId),
+                        new SqlParameter("@journeydate", journeyDate)
+                    );
+
+                    bool isValid = dtValid.Rows.Count > 0 && Convert.ToInt32(dtValid.Rows[0]["isvalid"]) == 1;
+                    if (!isValid)
+                    {
+                        Console.WriteLine("\nSelected journey date is invalid for the chosen train.");
+                        Console.WriteLine("Please check the running days and re-enter a valid journey date.\n");
+
+                        continue; // Restart full loop
+                    }
+
+                    // If all is valid, break out of loop to continue booking
+                    break;
                 }
                 // --- End journey date validation ---
 

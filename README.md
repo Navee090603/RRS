@@ -180,17 +180,17 @@ This project outlines the development of a console-based Railway Reservation Sys
 
 ---
 
-## Attached Content
-
 ### Database Structure
 
 **DataBase Diagram**
 
 <img width="900" height="1050" alt="image" src="https://github.com/user-attachments/assets/0cd221d6-20a7-49e3-aca6-da93d100dbd6" />
 
+---
+
 **Tables in RRS_DB:**
 
-<img width="182" height="214" alt="Tables" src="https://github.com/user-attachments/assets/e92ee125-5a17-475e-aa23-268d281ff0b4" />
+<img width="200" height="214" alt="Tables" src="https://github.com/user-attachments/assets/e92ee125-5a17-475e-aa23-268d281ff0b4" />
 
 - `dbo.admin_logs`
 - `dbo.bookings`

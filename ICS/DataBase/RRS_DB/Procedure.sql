@@ -217,65 +217,71 @@ end
 
 
 -- a. search available trains (ado.net ready) --> Useful while booking
-create or alter procedure sp_searchtrains
-    @sourcestationid int,
-    @destinationstationid int,
-    @journeydate date,
-    @seattype nvarchar(10) = 'sleeper',
-    @passengercount int = 1
-as
-begin
-    set nocount on
+CREATE OR ALTER PROCEDURE sp_searchtrains
+    @sourcestationid INT,
+    @destinationstationid INT,
+    @journeydate DATE,
+    @seattype NVARCHAR(10) = 'sleeper',
+    @passengercount INT = 1
+AS
+BEGIN
+    SET NOCOUNT ON;
 
-    declare @dayofweek int = datepart(weekday, @journeydate)
+    DECLARE @dayofweek INT = DATEPART(weekday, @journeydate);
 
-    select
+    SELECT
         t.train_id,
         t.train_number,
         t.train_name,
-        s1.station_name as source_station,
-        s1.station_code as source_code,
-        s2.station_name as destination_station,
-        s2.station_code as destination_code,
+        s1.station_name AS source_station,
+        s1.station_code AS source_code,
+        s2.station_name AS destination_station,
+        s2.station_code AS destination_code,
         t.departure_time,
         t.arrival_time,
-        case @seattype
-            when 'sleeper' then isnull(sa.sleeper_available, 0)
-            when 'ac3' then isnull(sa.ac3_available, 0)
-            when 'ac2' then isnull(sa.ac2_available, 0)
-        end as available_seats,
-        case @seattype
-            when 'sleeper' then t.sleeper_fare
-            when 'ac3' then t.ac3_fare
-            when 'ac2' then t.ac2_fare
-        end as fare_per_passenger,
-        (case @seattype
-            when 'sleeper' then t.sleeper_fare
-            when 'ac3' then t.ac3_fare
-            when 'ac2' then t.ac2_fare
-        end * @passengercount) as total_fare,
-        case
-            when case @seattype
-                when 'sleeper' then isnull(sa.sleeper_available, 0)
-                when 'ac3' then isnull(sa.ac3_available, 0)
-                when 'ac2' then isnull(sa.ac2_available, 0)
-            end >= @passengercount then 'available'
-            else 'waitlist'
-        end as booking_status
-    from trains t
-    inner join stations s1 on t.source_station_id = s1.station_id
-    inner join stations s2 on t.destination_station_id = s2.station_id
-    left join seat_availability sa on t.train_id = sa.train_id and sa.journey_date = @journeydate
-    where t.source_station_id = @sourcestationid
-      and t.destination_station_id = @destinationstationid
-      and t.is_active = 1
-      and s1.is_active = 1
-      and s2.is_active = 1
-      and len(t.running_days) >= @dayofweek
-      and substring(t.running_days, @dayofweek, 1) = '1'
-	  and @journeydate <= '2025-12-05' --for my reference cause train seat availability maded upto only 2025-12-01 
-    order by t.departure_time
-end
+        CASE @seattype
+            WHEN 'sleeper' THEN ISNULL(sa.sleeper_available, 0)
+            WHEN 'ac3' THEN ISNULL(sa.ac3_available, 0)
+            WHEN 'ac2' THEN ISNULL(sa.ac2_available, 0)
+        END AS available_seats,
+        CASE @seattype
+            WHEN 'sleeper' THEN t.sleeper_fare
+            WHEN 'ac3' THEN t.ac3_fare
+            WHEN 'ac2' THEN t.ac2_fare
+        END AS fare_per_passenger,
+        (
+            CASE @seattype
+                WHEN 'sleeper' THEN t.sleeper_fare
+                WHEN 'ac3' THEN t.ac3_fare
+                WHEN 'ac2' THEN t.ac2_fare
+            END * @passengercount
+        ) AS total_fare,
+        CASE
+            WHEN
+                CASE @seattype
+                    WHEN 'sleeper' THEN ISNULL(sa.sleeper_available, 0)
+                    WHEN 'ac3' THEN ISNULL(sa.ac3_available, 0)
+                    WHEN 'ac2' THEN ISNULL(sa.ac2_available, 0)
+                END >= @passengercount
+            THEN 'available'
+            ELSE 'waitlist'
+        END AS booking_status
+    FROM trains t
+    INNER JOIN stations s1 ON t.source_station_id = s1.station_id
+    INNER JOIN stations s2 ON t.destination_station_id = s2.station_id
+    LEFT JOIN seat_availability sa ON t.train_id = sa.train_id AND sa.journey_date = @journeydate
+    WHERE t.source_station_id = @sourcestationid
+      AND t.destination_station_id = @destinationstationid
+      AND t.is_active = 1
+      AND s1.is_active = 1
+      AND s2.is_active = 1
+      AND LEN(t.running_days) >= @dayofweek
+      AND SUBSTRING(t.running_days, @dayofweek, 1) = '1'
+      AND @journeydate <= '2025-12-05' -- for reference: seat availability ends at 2025-12-01
+    ORDER BY t.departure_time;
+END
+
+
 
 -- b. get train details
 create or alter procedure sp_gettraindetails
@@ -303,6 +309,38 @@ begin
     left join seat_availability sa on t.train_id = sa.train_id and sa.journey_date = @journeydate
     where t.train_id = @trainid
 end
+
+--c.is valid journey date
+
+CREATE OR ALTER FUNCTION fn_isvalidjourneydate(
+    @trainid INT,
+    @journeydate DATE
+)
+RETURNS BIT
+AS
+BEGIN
+    DECLARE @isvalid BIT = 0;
+    DECLARE @runningdays NVARCHAR(7);
+    DECLARE @currentdate DATE = CAST(GETDATE() AS DATE);
+
+    -- Check if journey date is not in past
+    IF @journeydate < @currentdate
+        RETURN 0;
+
+    SELECT @runningdays = running_days
+    FROM trains
+    WHERE train_id = @trainid AND is_active = 1;
+
+    -- Calculate day index (Monday=1, ..., Sunday=7)
+    DECLARE @dayindex INT = ((DATEPART(weekday, @journeydate) + @@DATEFIRST - 2) % 7) + 1;
+
+    IF @runningdays IS NOT NULL AND LEN(@runningdays) >= @dayindex
+    BEGIN
+        SET @isvalid = CASE WHEN SUBSTRING(@runningdays, @dayindex, 1) = '1' THEN 1 ELSE 0 END;
+    END
+
+    RETURN @isvalid;
+END
 
 -- =====================================================
 -- 5. booking operations

@@ -693,33 +693,33 @@ begin
 end
 
 ---- c. validate journey date
---create or alter function fn_isvalidjourneydate(
---    @trainid int,
---    @journeydate date
---)
---returns bit
---as
---begin
---    declare @isvalid bit = 0
---    declare @dayofweek int = datepart(weekday, @journeydate)
---    declare @runningdays nvarchar(7)
---    declare @currentdate date = cast(getdate() as date)
+create or alter function fn_isvalidjourneydate(
+    @trainid int,
+    @journeydate date
+)
+returns bit
+as
+begin
+    declare @isvalid bit = 0
+    declare @dayofweek int = datepart(weekday, @journeydate)
+    declare @runningdays nvarchar(7)
+    declare @currentdate date = cast(getdate() as date)
 
---    -- check if journey date is not in past
---    if @journeydate < @currentdate
---        return 0
+    -- check if journey date is not in past
+    if @journeydate < @currentdate
+        return 0
 
---    select @runningdays = running_days
---    from trains
---    where train_id = @trainid and is_active = 1
+    select @runningdays = running_days
+    from trains
+    where train_id = @trainid and is_active = 1
 
---    if @runningdays is not null and len(@runningdays) >= @dayofweek
---    begin
---        set @isvalid = case when substring(@runningdays, @dayofweek, 1) = '1' then 1 else 0 end
---    end
+    if @runningdays is not null and len(@runningdays) >= @dayofweek
+    begin
+        set @isvalid = case when substring(@runningdays, @dayofweek, 1) = '1' then 1 else 0 end
+    end
 
---    return @isvalid
---end
+    return @isvalid
+end
 
 -- =====================================================
 -- 7. admin procedures
